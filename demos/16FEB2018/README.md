@@ -23,7 +23,7 @@
   - host-os or
   - mounted disk
 
-### What is a volume monitoring?
+### What is volume monitoring?
 - Volume monitoring is used to monitor openebs volumes
 - It makes use of Kubernetes sidecar pattern
 - It is deployed as a sidecar container along with openebs controller
