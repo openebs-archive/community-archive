@@ -42,10 +42,10 @@ kubectl get svc maya-apiserver-service
 
 # create the openebs volume
 curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-std-060.yaml)" \
-  http://10.98.11.182:5656/v1alpha1/volumes/
+  http://$clusterIP:5656/v1alpha1/volumes/
 
 # delete the openebs volume
-curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
@@ -67,10 +67,10 @@ kubectl get svc maya-apiserver-service
 
 # create the openebs volume
 curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-on-060.yaml)" \
-  http://10.98.11.182:5656/v1alpha1/volumes/
+  http://$clusterIP:5656/v1alpha1/volumes/
 
 # delete the openebs volume
-curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
@@ -92,10 +92,10 @@ kubectl get svc maya-apiserver-service
 
 # create the openebs volume
 curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-off-060.yaml)" \
-  http://10.98.11.182:5656/v1alpha1/volumes/
+  http://$clusterIP:5656/v1alpha1/volumes/
 
 # delete the openebs volume
-curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
