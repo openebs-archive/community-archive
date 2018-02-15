@@ -30,6 +30,76 @@
 
 ### Steps to configure StoragePool using VolumePolicy
 
+```bash
+# deploy openebs operator components
+kubectl create -f operator.yaml
+
+# deploy openebs volume policies
+kubectl create -f vol-policies.yaml
+
+# use the cluster IP to invoke curl commands to maya api server
+kubectl get svc maya-apiserver-service
+
+# create the openebs volume
+curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-std-060.yaml)" \
+  http://10.98.11.182:5656/v1alpha1/volumes/
+
+# delete the openebs volume
+curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+
+# delete openebs volume policies
+kubectl delete -f vol-policies.yaml
+
+# delete openebs operator components
+kubectl delete -f operator.yaml
+```
+
 ### Steps to enable volume monitoring using VolumePolicy
+```bash
+# deploy openebs operator components
+kubectl create -f operator.yaml
+
+# deploy openebs volume policies
+kubectl create -f vol-policies.yaml
+
+# use the cluster IP to invoke curl commands to maya api server
+kubectl get svc maya-apiserver-service
+
+# create the openebs volume
+curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-on-060.yaml)" \
+  http://10.98.11.182:5656/v1alpha1/volumes/
+
+# delete the openebs volume
+curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+
+# delete openebs volume policies
+kubectl delete -f vol-policies.yaml
+
+# delete openebs operator components
+kubectl delete -f operator.yaml
+```
 
 ### Steps to disable volume monitoring using VolumePolicy
+```bash
+# deploy openebs operator components
+kubectl create -f operator.yaml
+
+# deploy openebs volume policies
+kubectl create -f vol-policies.yaml
+
+# use the cluster IP to invoke curl commands to maya api server
+kubectl get svc maya-apiserver-service
+
+# create the openebs volume
+curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-off-060.yaml)" \
+  http://10.98.11.182:5656/v1alpha1/volumes/
+
+# delete the openebs volume
+curl http://10.98.11.182:5656/latest/volumes/delete/jivavolpol
+
+# delete openebs volume policies
+kubectl delete -f vol-policies.yaml
+
+# delete openebs operator components
+kubectl delete -f operator.yaml
+```
