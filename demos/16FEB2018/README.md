@@ -16,7 +16,7 @@
   - Kubernetes Deployment
   - Kubernetes Service
 
-### What is a StoragePool?
+### What is a storage pool?
 - Storage pool is a concept defined by openebs
 - It is a Kubernetes CustomResource
 - It provides a persistent path for an OpenEBS volume. It can be a directory on:
@@ -28,6 +28,11 @@
 - It makes use of Kubernetes sidecar pattern
 - It is deployed as a sidecar container along with openebs controller
 - It exposes metrics to Prometheus
+
+### What is volume replica count?
+- OpenEBS has the concept of replicas
+- Replicas persist the IO on configured storage pool (refer above)
+- It is advisable to have a replica count of 3 to ensure high availability
 
 ### Steps to configure StoragePool using VolumePolicy
 
