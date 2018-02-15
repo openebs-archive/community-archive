@@ -3,6 +3,7 @@
 ### Agenda
 - Configuring StoragePool using VolumePolicy
 - Enabling/Disabling openebs volume monitoring using VolumePolicy
+- Configuring ReplicaCount using VolumePolicy
 
 ### Assumptions
 - openebs/maya's master branch is being used
@@ -92,6 +93,31 @@ kubectl get svc maya-apiserver-service
 
 # create the openebs volume
 curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-off-060.yaml)" \
+  http://$clusterIP:5656/v1alpha1/volumes/
+
+# delete the openebs volume
+curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
+
+# delete openebs volume policies
+kubectl delete -f vol-policies.yaml
+
+# delete openebs operator components
+kubectl delete -f operator.yaml
+```
+
+### Steps to configure replica count using VolumePolicy
+```bash
+# deploy openebs operator components
+kubectl create -f operator.yaml
+
+# deploy openebs volume policies
+kubectl create -f vol-policies.yaml
+
+# use the cluster IP to invoke curl commands to maya api server
+kubectl get svc maya-apiserver-service
+
+# create the openebs volume
+curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-ha-060.yaml)" \
   http://$clusterIP:5656/v1alpha1/volumes/
 
 # delete the openebs volume
