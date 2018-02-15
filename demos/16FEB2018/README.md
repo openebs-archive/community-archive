@@ -37,12 +37,14 @@
 ### Steps to configure StoragePool using VolumePolicy
 
 ```bash
+# SETUP
 # deploy openebs operator components
 kubectl create -f operator.yaml
 
 # deploy openebs volume policies
 kubectl create -f vol-policies.yaml
 
+# RUN
 # use the cluster IP to invoke curl commands to maya api server
 kubectl get svc maya-apiserver-service
 
@@ -53,6 +55,7 @@ curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-std-060.yaml)
 # delete the openebs volume
 curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
+# TEARDOWN
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
 
@@ -62,12 +65,14 @@ kubectl delete -f operator.yaml
 
 ### Steps to enable volume monitoring using VolumePolicy
 ```bash
+# SETUP
 # deploy openebs operator components
 kubectl create -f operator.yaml
 
 # deploy openebs volume policies
 kubectl create -f vol-policies.yaml
 
+# RUN
 # use the cluster IP to invoke curl commands to maya api server
 kubectl get svc maya-apiserver-service
 
@@ -78,6 +83,7 @@ curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-on-060.ya
 # delete the openebs volume
 curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
+# TEARDOWN
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
 
@@ -87,12 +93,14 @@ kubectl delete -f operator.yaml
 
 ### Steps to disable volume monitoring using VolumePolicy
 ```bash
+# SETUP
 # deploy openebs operator components
 kubectl create -f operator.yaml
 
 # deploy openebs volume policies
 kubectl create -f vol-policies.yaml
 
+# RUN
 # use the cluster IP to invoke curl commands to maya api server
 kubectl get svc maya-apiserver-service
 
@@ -103,6 +111,7 @@ curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-mon-off-060.y
 # delete the openebs volume
 curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
+# TEARDOWN
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
 
@@ -112,12 +121,14 @@ kubectl delete -f operator.yaml
 
 ### Steps to configure replica count using VolumePolicy
 ```bash
+# SETUP
 # deploy openebs operator components
 kubectl create -f operator.yaml
 
 # deploy openebs volume policies
 kubectl create -f vol-policies.yaml
 
+# RUN
 # use the cluster IP to invoke curl commands to maya api server
 kubectl get svc maya-apiserver-service
 
@@ -128,6 +139,7 @@ curl -k -H "Content-Type: application/yaml" -XPOST -d"$(cat oe-vol-ha-060.yaml)"
 # delete the openebs volume
 curl http://$clusterIP:5656/latest/volumes/delete/jivavolpol
 
+# TEARDOWN
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
 
