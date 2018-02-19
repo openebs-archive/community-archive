@@ -1,0 +1,12 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: oe-vol-claim
+  namespace: apps
+spec:
+  storageClassName: openebs-std-0.5.2
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2G

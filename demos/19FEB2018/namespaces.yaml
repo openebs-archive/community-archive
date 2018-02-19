@@ -1,0 +1,11 @@
+# apps namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+# openebs namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openebs
