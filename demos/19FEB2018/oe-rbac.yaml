@@ -23,9 +23,9 @@ rules:
 - apiGroups: ["storage.k8s.io"]
   resources: ["storageclasses"]
   verbs: ["*"]
-- apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
-  verbs: [ "get", "list", "create" ]
+- apiGroups: ["*"]
+  resources: ["storagepools"]
+  verbs: ["get", "list"]
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ---
@@ -39,24 +39,6 @@ subjects:
 - kind: ServiceAccount
   name: openebs-operator
   namespace: openebs
-#- kind: User
-#  name: system:serviceaccount:openebs:openebs-operator
-#  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: openebs-operator
-  apiGroup: rbac.authorization.k8s.io
----
-# ClusterRoleBinding binds openebs service account with the ClusterRole 
-# privileges.
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: openebs-operator
-subjects:
-- kind: ServiceAccount
-  name: openebs-operator
-  namespace: apps
 #- kind: User
 #  name: system:serviceaccount:openebs:openebs-operator
 #  apiGroup: rbac.authorization.k8s.io
