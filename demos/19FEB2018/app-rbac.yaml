@@ -1,0 +1,25 @@
+# role enabled for apps operator
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: apps-operator
+  namespace: apps
+rules:
+- apiGroups: ["*"]
+  resources: ["persistentvolumeclaims", "deployments", "pods", "services"]
+  verbs: ["*"]
+---
+# binding the role of apps operator to user named employee
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: apps-operator
+  namespace: apps
+subjects:
+- kind: User
+  name: employee
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: apps-operator
+  apiGroup: rbac.authorization.k8s.io

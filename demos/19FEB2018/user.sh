@@ -26,7 +26,7 @@ openssl x509 -req -in employee.csr -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.
 
 # Save both employee.crt and employee.key in a safe location (in this example 
 # we will use /home/employee/.certs/
-rm -rf /home/employee/.certs
+sudo rm -rf /home/employee/.certs
 
 sudo mkdir -p /home/employee/.certs
 sudo cp employee.crt /home/employee/.certs/

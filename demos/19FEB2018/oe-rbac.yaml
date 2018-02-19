@@ -5,7 +5,7 @@ metadata:
   name: openebs-operator
   namespace: openebs
 ---
-# ClusterRole since openesb operations are cluster wide
+# ClusterRole since openebs operations are cluster wide
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -29,7 +29,7 @@ rules:
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ---
-# ClusterRoleBinding binds openebs service sccount with the ClusterRole 
+# ClusterRoleBinding binds openebs service account with the ClusterRole 
 # privileges.
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -39,6 +39,24 @@ subjects:
 - kind: ServiceAccount
   name: openebs-operator
   namespace: openebs
+#- kind: User
+#  name: system:serviceaccount:openebs:openebs-operator
+#  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: openebs-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRoleBinding binds openebs service account with the ClusterRole 
+# privileges.
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: openebs-operator
+subjects:
+- kind: ServiceAccount
+  name: openebs-operator
+  namespace: apps
 #- kind: User
 #  name: system:serviceaccount:openebs:openebs-operator
 #  apiGroup: rbac.authorization.k8s.io

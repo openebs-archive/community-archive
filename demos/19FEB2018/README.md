@@ -12,6 +12,7 @@
   minikube start --extra-config=apiserver.Authorization.Mode=RBAC
   ```
   - kubectl is installed
+  - NOTE: I destroy my vagrant VM that had an existing minikube to let these settings be applied
 - Basic knowledge of:
   - Kubernetes StorageClass
   - Kubernetes CRD
@@ -50,7 +51,7 @@ kubectl create -f oe-objects.yaml
 sh ./user.sh
 
 # deploy user/app based rbac policies
-#kubectl create -f app-rbac.yaml
+kubectl create -f app-rbac.yaml
 
 # create openebs volume
 kubectl --context=employee-context create -f app.yaml
@@ -87,7 +88,7 @@ kubectl delete -f oe-operators.yaml
 kubectl delete -f oe-rbac.yaml
 
 # delete user rbac
-#kubectl delete -f app-rbac.yaml
+kubectl delete -f app-rbac.yaml
 
 # delete the user context
 kubectl config delete-context employee-context
@@ -95,3 +96,27 @@ kubectl config delete-context employee-context
 # delete custom namespaces
 kubectl delete -f namespaces.yaml
 ```
+
+### Troubleshooting
+
+#### rbac issues while using context `employee-context`
+$ kubectl --context=employee-context get deploy --all-namespaces
+```
+Error from server (Forbidden): deployments.extensions is forbidden: User "employee" cannot list deployments.extensions at the cluster scope
+```
+
+solution:
+- Set deployments in the Role's rules.resources path of the user employee
+- Double check on the granted verbs for this resource
+
+#### rbac issues using StoragePool
+
+This leads to setting of /var/openebs as the persistent path than the path mentioned in StoragePool CR object
+
+$ kubectl --namespace=openebs logs maya-apiserver-5cb7666484-k66ph
+
+```
+storagepools.openebs.io "default" is forbidden: User "system:serviceaccount:openebs:openebs-operator" cannot get storagepools.openebs.io in the namespace "apps"
+```
+
+resolution: This is a bug. maya api service should not use a namespace while searching for the StoragePool. This is not a rbac issue but ideally a not found issue. However, this issue appears only when rbac policies are set.
