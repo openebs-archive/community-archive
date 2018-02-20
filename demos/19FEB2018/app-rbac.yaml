@@ -1,4 +1,6 @@
 # role enabled for apps operator
+# NOTE: These roles are for demonstation purposes only. OpenEBS does not
+# control these roles. The application admin can set the desired roles.
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
