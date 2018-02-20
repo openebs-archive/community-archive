@@ -39,9 +39,6 @@ subjects:
 - kind: ServiceAccount
   name: openebs-operator
   namespace: openebs
-#- kind: User
-#  name: system:serviceaccount:openebs:openebs-operator
-#  apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
   name: openebs-operator
