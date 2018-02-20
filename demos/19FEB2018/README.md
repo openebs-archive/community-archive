@@ -20,12 +20,11 @@
   - Kubernetes Deployment
   - Kubernetes Service
 
-### What is a storage pool?
-- Storage pool is a concept defined by openebs
-- It is a Kubernetes CustomResource
-- It provides a persistent path for an OpenEBS volume. It can be a directory on:
-  - host-os or
-  - mounted disk
+### What is Namespace?
+- TODO
+
+### What is RBAC?
+- TODO
 
 ### Steps to provision openebs volume using appropriate rbac policies
 
