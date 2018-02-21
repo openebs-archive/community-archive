@@ -52,12 +52,14 @@ kubectl -n kube-system create sa tiller
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
 
 # Update the deployment to set the above created service account
-kubectl -n kube-system patch deploy/tiller-deploy -p '{"spec": {"template": {"spec": {"serviceAccountName": "tiller"}}}}'
+kubectl -n kube-system patch deploy/tiller-deploy -p \
+  '{"spec": {"template": {"spec": {"serviceAccountName": "tiller"}}}}'
 ```
 
 ```bash
 # SETUP
-$ helm install --debug --dry-run ./ -n autogen --namespace openebs | sed -n '/---/,$p' > openebs-operator-autogen.yaml
+$ helm install --debug --dry-run ./ -n autogen --namespace openebs \
+  | sed -n '/---/,$p' > openebs-operator-autogen.yaml
 
 # VERIFY
 
