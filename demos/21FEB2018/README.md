@@ -23,6 +23,39 @@
 ### Steps to use helm  to generate openebs specifications
 
 ```bash
+# INSTALL
+# Ensure that socat is installed
+# This is used between helm to kubernetes communication
+sudo apt-get install socat
+
+# Download & install helm
+curl -Lo /tmp/helm-linux-amd64.tar.gz \
+  https://kubernetes-helm.storage.googleapis.com/helm-v2.6.2-linux-amd64.tar.gz
+tar -xvf /tmp/helm-linux-amd64.tar.gz -C /tmp/
+chmod +x  /tmp/linux-amd64/helm && sudo mv /tmp/linux-amd64/helm /usr/local/bin/
+
+# Initialize helm
+helm init
+
+# Verify helm is running by checking the tiller deploy
+$ kubectl get deploy --all-namespaces
+NAMESPACE     NAME                   DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+kube-system   kube-dns               1         1         1            0           2d
+kube-system   kubernetes-dashboard   1         1         1            0           2d
+kube-system   tiller-deploy          1         1         1            1           25s
+
+# Setup RBAC for tiller
+# Create a service account in the namespace kube-system
+kubectl -n kube-system create sa tiller
+
+# Enable cluster admin role
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+
+# Update the deployment to set the above created service account
+kubectl -n kube-system patch deploy/tiller-deploy -p '{"spec": {"template": {"spec": {"serviceAccountName": "tiller"}}}}'
+```
+
+```bash
 # SETUP
 $ helm install --debug --dry-run ./ -n autogen --namespace openebs | sed -n '/---/,$p' > openebs-operator-autogen.yaml
 
