@@ -62,14 +62,16 @@ $ helm install --debug --dry-run ./ -n autogen --namespace openebs \
   | sed -n '/---/,$p' > openebs-operator-autogen.yaml
 
 # VERIFY
-
+kubectl create -f openebs-operator-autogen.yaml
 
 # TEARDOWN
+kubectl delete -f openebs-operator-autogen.yaml
 
-
+# REPEAT
+# Try changing the values in values.yaml
+# Run SETUP, VERIFY & TEARDOWN steps
 ```
 
 ### References
 
 - `helm init` installs Tiller into the cluster in the kube-system namespace and without any RBAC rules applied. This is appropriate for local development and other private scenarios because it enables you to be productive immediately. It also enables you to continue running Helm with existing Kubernetes clusters that do not have role-based access control (RBAC) support until you can move your workloads to a more recent Kubernetes version.
-
