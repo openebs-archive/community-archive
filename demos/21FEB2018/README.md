@@ -70,6 +70,11 @@ kubectl delete -f openebs-operator-autogen.yaml
 # REPEAT
 # Try changing the values in values.yaml
 # Run SETUP, VERIFY & TEARDOWN steps
+# It is essential for the CI to vary the values present in values.yaml & test the steps
+# [IMPORTANT] It is also required to run these steps through various:
+# K8s versions, 
+# helm versions & 
+# K8s deployment environments
 ```
 
 ### References
