@@ -1,0 +1,12 @@
+kind: OpenEBSVolume
+apiVersion: v1
+metadata:
+  name: jivavolpol
+  labels:
+    # old way - capacity
+    volumeprovisioner.mapi.openebs.io/storage-size: 2G
+    k8s.io/storage-class: openebs-taints-0.6.0
+    # old way - namespace
+    k8s.io/namespace: default
+capacity: 2G
+namespace: default
