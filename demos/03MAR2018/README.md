@@ -64,7 +64,7 @@ kubectl create -f vol-policies.yaml
 ```
 
 #### RUN
-```
+```bash
 # Use maya apiserver service cluster IP
 kubectl get svc --all-namespaces
 
@@ -82,7 +82,7 @@ curl -H "namespace: default" http://"$(kubectl get svc -n openebs ci-openebs-may
 ```
 
 #### TEARDOWN
-```
+```bash
 # delete openebs volume policies
 kubectl delete -f vol-policies.yaml
 
