@@ -1,6 +1,9 @@
 ## Agenda
 - Configure Taints & Tolerations using VolumePolicy
-- issue - https://github.com/openebs/openebs/issues/1304
+  - Issue - https://github.com/openebs/openebs/issues/1304
+  - PR- https://github.com/openebs/maya/pull/277
+
+NOTE: This will work once above PR is merged!
 
 ### Assumptions
 - openebs/maya's master branch is being used
