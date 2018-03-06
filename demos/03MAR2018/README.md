@@ -93,14 +93,20 @@ kubectl delete -f crds.yaml
 
 ### Troubleshooting
 
-- Issue: 
- - volumepolicies.openebs.io "openebs-policy-taints-0.6.0" is forbidden: User "system:serviceaccount:openebs:openebs-maya-operator" cannot get volumepolicies.openebs.io at the cluster scope
-- Solution: 
- - Add volumepolicies as a resource in ClusterRole
- - Check the openebs-operator-autogen.yaml file
+#### Issue 1:
+```bash
+volumepolicies.openebs.io "openebs-policy-taints-0.6.0" is forbidden: User "system:serviceaccount:openebs:openebs-maya-operator" cannot get volumepolicies.openebs.io at the cluster scope
+```
 
-- Issue:
- - configmaps "volume-service-0.6.0" is forbidden: User "system:serviceaccount:openebs:openebs-maya-operator" cannot get configmaps in the namespace "openebs"
+- Solution: 
+  - Add volumepolicies as a resource in ClusterRole
+  - Check the openebs-operator-autogen.yaml file
+
+#### Issue 2:
+```bash
+configmaps "volume-service-0.6.0" is forbidden: User "system:serviceaccount:openebs:openebs-maya-operator" cannot get configmaps in the namespace "openebs"
+```
+
 - Solution:
- - Add configmaps as a resource in ClusterRole
- - Check the openebs-operator-autogen.yaml file
+  - Add configmaps as a resource in ClusterRole
+  - Check the openebs-operator-autogen.yaml file
