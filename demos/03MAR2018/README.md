@@ -39,6 +39,63 @@ tolerations:
 
 ### Taints & Tolerations using VolumePolicy
 
+- VolumePolicy snippet looks like:
+```yaml
+  - name: TaintTolerations
+    value: |-
+      t1:
+        key: node.openebs.io/disktype
+        operator: Equal
+        value: ssd
+        effect: NoSchedule
+      t2:
+        key: node.openebs.io/disktype
+        operator: Equal
+        value: ssd
+        effect: NoExecute
+      t3:
+        key: jk
+        operator: Equal
+        value: jv
+        effect: NoSchedule
+  - name: EvictionTolerations
+    value: |-
+      t1:
+        effect: NoExecute
+        key: node.alpha.kubernetes.io/notReady
+        operator: Exists
+      t2:
+        effect: NoExecute
+        key: node.alpha.kubernetes.io/unreachable
+        operator: Exists
+```
+- Volume replica template snippet looks like:
+```yaml
+    {{- $isTaintTolerations := .Policy.TaintTolerations.value | default "false" -}}
+    {{- $taintTolerationsVal := fromYaml .Policy.TaintTolerations.value -}}
+    {{- $isEvictionTolerations := .Policy.EvictionTolerations.value | default "false" -}}
+    {{- $evictionTolerationsVal := fromYaml .Policy.EvictionTolerations.value -}}
+
+
+          tolerations:
+          {{- if ne $isTaintTolerations "false" }}
+          {{- range $k, $v := $taintTolerationsVal }}
+          - 
+          {{- range $kk, $vv := $v }}
+            {{ $kk }}: {{ $vv }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if ne $isEvictionTolerations "false" }}
+          {{- range $k, $v := $evictionTolerationsVal }}
+          - 
+          {{- range $kk, $vv := $v }}
+            {{ $kk }}: {{ $vv }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+```
+
 #### SETUP
 ```bash
 # deploy kubectl, minikube, helm, & openebs charts
