@@ -4,7 +4,7 @@
   - i.e. best effort scheduling to let `volume controller` & `application` PODs 
 run in the same topology key e.g. same K8s node
   - Issue - https://github.com/openebs/openebs/issues/1257
-  - PR - 
+  - PR - https://github.com/openebs/maya/pull/278
 
 NOTE: This will work once above PR is merged!
 
