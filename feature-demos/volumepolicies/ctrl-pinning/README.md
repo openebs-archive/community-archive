@@ -30,9 +30,9 @@ scheduled based on labels on pods that are already running on the node rather
 than based on labels on nodes. 
 
 There are currently two types of pod affinity:
-  1/ requiredDuringSchedulingIgnoredDuringExecution and 
-  2/ preferredDuringSchedulingIgnoredDuringExecution 
-which denote “hard” vs. “soft” requirements.
+  - requiredDuringSchedulingIgnoredDuringExecution &
+  - preferredDuringSchedulingIgnoredDuringExecution
+which denote “hard” vs. “soft” affinity requirements.
 
 It is to be noted that the above hard requirement will put the volume controller
 pod into a pending state till the application pod is not created.
@@ -72,7 +72,6 @@ spec:
    labels:
     app: jenkins-app
     controller.openebs.io/affinity: mypin
-    controller.openebs.io/affinity-topology: kubernetes.io/hostname
   spec:
    securityContext:
      fsGroup: 1000
@@ -100,6 +99,7 @@ metadata:
   annotations:
     controller.openebs.io/affinity: mypin
     controller.openebs.io/affinity-topology: kubernetes.io/hostname
+    controller.openebs.io/affinity-type: hard
 spec:
   accessModes:
     - ReadWriteOnce
@@ -172,7 +172,7 @@ data:
         {.metadata.annotations.controller\.openebs\.io/affinity-topology}
 ```
 
-- sample volume controller template snippet:
+- sample volume controller template snippet using hard affinity:
 ```yaml
         spec:
           {{- if ne .TaskResult.vpvc.affinity "" }}
@@ -186,6 +186,25 @@ data:
                     values:
                     - {{ .TaskResult.vpvc.affinity }}
                 topologyKey: {{ .TaskResult.vpvc.affinityTopology | default "kubernetes.io/hostname" }}
+          {{- end }}
+```
+
+- sample volume controller template snippet using soft affinity:
+```yaml
+        spec:
+          {{- if ne .TaskResult.vpvc.affinity "" }}
+          affinity:
+            podAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: controller.openebs.io/affinity 
+                      operator: In 
+                      values:
+                      - {{ .TaskResult.vpvc.affinity }} 
+                  topologyKey: {{ .TaskResult.vpvc.affinityTopology | default "kubernetes.io/hostname" }}
           {{- end }}
 ```
 

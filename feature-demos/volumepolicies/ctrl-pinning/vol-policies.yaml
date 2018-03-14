@@ -13,6 +13,7 @@ metadata:
   annotations:
     controller.openebs.io/affinity: pinit
     controller.openebs.io/affinity-topology: kubernetes.io/hostname
+    controller.openebs.io/affinity-type: hard
 spec:
   accessModes:
     - ReadWriteOnce
@@ -170,6 +171,9 @@ data:
     - alias: affinityTopology
       path: |-
         {.metadata.annotations.controller\.openebs\.io/affinity-topology}
+    - alias: affinityType
+      path: |-
+        {.metadata.annotations.controller\.openebs\.io/affinity-type}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -188,6 +192,9 @@ data:
   task: |
     {{- $isMonitor := .Policy.VolumeMonitor.enabled | default "true" | lower -}}
     {{- $monitorVal := .Policy.VolumeMonitor.value | default "openebs/m-exporter:0.5.0" -}}
+    {{- $affinity := .TaskResult.vpvc.affinity -}}
+    {{- $affinityType := .TaskResult.vpvc.affinityType | default "soft" -}}
+    {{- $affinityTopology := .TaskResult.vpvc.affinityTopology | default "kubernetes.io/hostname" -}}
     apiVersion: extensions/v1beta1
     Kind: Deployment
     metadata:
@@ -226,17 +233,30 @@ data:
             openebs.io/pv: {{ .Volume.owner }}
             vsm: {{ .Volume.owner }}
         spec:
-          {{- if ne .TaskResult.vpvc.affinity "" }}
+          {{- if ne $affinity "" }}
           affinity:
             podAffinity:
+              {{- if eq $affinityType "soft" }}
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: controller.openebs.io/affinity 
+                      operator: In 
+                      values:
+                      - {{ $affinity }} 
+                  topologyKey: {{ $affinityTopology }}
+              {{- else }}
               requiredDuringSchedulingIgnoredDuringExecution:
               - labelSelector:
                   matchExpressions:
                   - key: controller.openebs.io/affinity
                     operator: In
                     values:
-                    - {{ .TaskResult.vpvc.affinity }}
-                topologyKey: {{ .TaskResult.vpvc.affinityTopology | default "kubernetes.io/hostname" }}
+                    - {{ $affinity }}
+                topologyKey: {{ $affinityTopology }}
+              {{- end }}
           {{- end }}
           containers:
           - args:
