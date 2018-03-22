@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-replica-patch-0.6.0
+  annotations:
+    openebs.io/policy: VolumePolicy
+    policy.openebs.io/version: 0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    objectName: {{ .Volume.owner }}-rep
+    action: patch
+    queries:
+    - alias: objectName
+    patch:
+      type: strategic
+      pspec: |-
+        spec:
+          template:
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                        {{- if ne .TaskResult.vreplist.nodeNames "" }}
+                        {{- $nodeNamesMap := .TaskResult.vreplist.nodeNames | split " " }}
+                        {{- range $k, $v := $nodeNamesMap }}
+                        - {{ $v }}
+                        {{- end }}
+                        {{- end }}
