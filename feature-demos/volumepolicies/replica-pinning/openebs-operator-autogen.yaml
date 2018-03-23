@@ -311,7 +311,7 @@ rules:
   resources: ["storageclasses"]
   verbs: ["*"]
 - apiGroups: ["*"]
-  resources: ["storagepools", "volumepolicies"]
+  resources: ["storagepools", "volumeparametergroups"]
   verbs: ["get", "list"]
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
