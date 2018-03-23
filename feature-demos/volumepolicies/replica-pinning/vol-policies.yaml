@@ -31,10 +31,10 @@ metadata:
     provisioner.openebs.io/version: 0.6.0
 provisioner: openebs.io/provisioner-iscsi
 parameters:
-  openebs.io/volume-policy: openebs-policy-repaffinity-0.6.0
+  openebs.io/volume-parameter-group: openebs-policy-repaffinity-0.6.0
 ---
 apiVersion: openebs.io/v1alpha1
-kind: VolumePolicy
+kind: VolumeParameterGroup
 metadata:
   name: openebs-policy-repaffinity-0.6.0
 spec:
@@ -86,22 +86,22 @@ spec:
         values:
         - some-node-label-value
   run:
-    searchNamespace: default
+    templateNamespace: default
     tasks:
     - template: volume-service-0.6.0
-      identity: vsvc
+      id: vsvc
     - template: volume-path-0.6.0
-      identity: vpath
+      id: vpath
     - template: volume-pvc-0.6.0
-      identity: vpvc
+      id: vpvc
     - template: volume-controller-0.6.0
-      identity: vctrl
+      id: vctrl
     - template: volume-replica-0.6.0
-      identity: vrep
+      id: vrep
     - template: volume-replica-list-0.6.0
-      identity: vreplist
+      id: vreplist
     - template: volume-replica-patch-0.6.0
-      identity: vreppatch
+      id: vreppatch
 ---
 apiVersion: v1
 kind: ConfigMap
