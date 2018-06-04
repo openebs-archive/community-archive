@@ -1,0 +1,517 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-read-list-controller-service-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Service
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller-service=jiva-controller-svc,openebs.io/pv={{ .Volume.owner }}
+    queries:
+    - alias: objectName
+      path: |-
+        {.kind}
+    - alias: clusterIP
+      path: |-
+        {.items[*].spec.clusterIP}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-read-list-controller-pods-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Pod
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller=jiva-controller,openebs.io/pv={{ .Volume.owner }}
+    queries:
+    - alias: objectName
+      path: |-
+        {.kind}
+    - alias: podIP
+      path: |-
+        {.items[*].status.podIP}
+    - alias: status
+      path: |-
+        {.items[*].status.containerStatuses[*].ready}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-read-list-replica-pods-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Pod
+    action: list
+    options: |-
+      labelSelector: openebs.io/replica=jiva-replica,openebs.io/pv={{ .Volume.owner }}
+    queries:
+    - alias: objectName
+      path: |-
+        {.kind}
+    - alias: capacity
+      path: |-
+        {.items[*].metadata.labels.openebs\.io/capacity}
+    - alias: poolPath
+      path: |-
+        {.items[*].metadata.labels.openebs\.io/storage-pool-path}
+    - alias: podIP
+      path: |-
+        {.items[*].status.podIP}
+    - alias: status
+      path: |-
+        {.items[*].status.containerStatuses[*].ready}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-read-output-0.6.0
+  namespace: default
+data:
+  meta: |
+    action: output
+    kind: CASVolume
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolume
+    apiVersion: v1alpha1
+    metadata:
+      name: {{ .Volume.owner }}
+      annotations:
+        vsm.openebs.io/controller-ips: {{ splitList " " .TaskResult.readctrls.podIP | first }}
+        vsm.openebs.io/cluster-ips: {{ splitList " " .TaskResult.readsvc.clusterIP | first }}
+        vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ .Volume.owner }}
+        vsm.openebs.io/replica-count: {{ splitList " " .TaskResult.readreps.podIP | len }}
+        vsm.openebs.io/volume-size: {{ splitList " " .TaskResult.readreps.capacity | first }}
+        vsm.openebs.io/controller-status: {{ splitList " " .TaskResult.readctrls.status | join "," }}
+        vsm.openebs.io/replica-ips: {{ splitList " " .TaskResult.readreps.podIP | join "," }}
+        vsm.openebs.io/replica-status: {{ splitList " " .TaskResult.readreps.status | join "," }}
+        vsm.openebs.io/targetportals: {{ splitList " " .TaskResult.readsvc.clusterIP | first }}:3260
+    capacity: {{ splitList " " .TaskResult.readreps.capacity | first }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-output-0.6.0
+  namespace: default
+data:
+  meta: |
+    action: output
+    kind: CASVolume
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolume
+    apiVersion: v1alpha1
+    metadata:
+      name: {{ .Volume.owner }}
+      annotations:
+        vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ .Volume.owner }}
+        vsm.openebs.io/replica-count: {{ .Config.ReplicaCount.value }}
+        vsm.openebs.io/volume-size: {{ .Volume.capacity }}
+        vsm.openebs.io/targetportals: {{ .TaskResult.vsvc.clusterIP }}:3260
+    capacity: {{ .Volume.capacity }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-put-service-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Service
+    action: put
+    queries:
+    - alias: objectName
+    - alias: clusterIP
+      path: |-
+        {.spec.clusterIP}
+  task: |
+    apiVersion: v1
+    Kind: Service
+    metadata:
+      labels:
+        openebs/controller-service: jiva-controller-service
+        openebs.io/controller-service: jiva-controller-svc
+        openebs.io/storage-engine-type: jiva
+        openebs/volume-provisioner: jiva
+        vsm: {{ .Volume.owner }}
+        openebs.io/pv: {{ .Volume.owner }}
+      name: {{ .Volume.owner }}-ctrl-svc
+    spec:
+      ports:
+      - name: iscsi
+        port: 3260
+        protocol: TCP
+        targetPort: 3260
+      - name: api
+        port: 9501
+        protocol: TCP
+        targetPort: 9501
+      selector:
+        openebs/controller: jiva-controller
+        vsm: {{ .Volume.owner }}
+        openebs.io/controller: jiva-controller
+        openebs.io/pv: {{ .Volume.owner }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-get-path-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePool
+    objectName: {{ .Config.StoragePool.value }}
+    action: get
+    queries:
+    - alias: objectName
+    - alias: storagePoolPath
+      path: |-
+        {.spec.path}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-get-pvc-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    objectName: {{ .Volume.pvc }}
+    action: get
+    queries:
+    - alias: objectName
+    - alias: affinity
+      path: |-
+        {.metadata.annotations.controller\.openebs\.io/affinity}
+    - alias: affinityTopology
+      path: |-
+        {.metadata.annotations.controller\.openebs\.io/affinity-topology}
+    - alias: affinityType
+      path: |-
+        {.metadata.annotations.controller\.openebs\.io/affinity-type}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-list-replica-pods-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Pod
+    action: list
+    options: |-
+      labelSelector: openebs.io/replica=jiva-replica,openebs.io/pv={{ .Volume.owner }}
+    retry: "10,30s"
+    queries:
+    - alias: objectName
+      path: |-
+        {.kind}
+    - alias: nodeNames
+      path: |-
+        {.items[*].spec.nodeName}
+      verify:
+        split: " "
+        count: {{ .Config.ReplicaCount.value }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-patch-replica-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    objectName: {{ .Volume.owner }}-rep
+    action: patch
+    queries:
+    - alias: objectName
+  task: |
+      {{- $isNodeAffinityRSIE := .Config.NodeAffinityRequiredSchedIgnoredExec.value | default "false" -}}
+      {{- $nodeAffinityRSIEVal := fromYaml .Config.NodeAffinityRequiredSchedIgnoredExec.value -}}
+      {{- $nodeNames := .TaskResult.vreplist.nodeNames -}}
+      type: strategic
+      pspec: |-
+        spec:
+          template:
+            spec:
+              affinity:
+                nodeAffinity:
+                  {{- if ne $isNodeAffinityRSIE "false" }}
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      {{- range $k, $v := $nodeAffinityRSIEVal }}
+                      - 
+                      {{- range $kk, $vv := $v }}
+                        {{ $kk }}: {{ $vv }}
+                      {{- end }}
+                      {{- end }}
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                        {{- if ne $nodeNames "" }}
+                        {{- $nodeNamesMap := $nodeNames | split " " }}
+                        {{- range $k, $v := $nodeNamesMap }}
+                        - {{ $v }}
+                        {{- end }}
+                        {{- end }}
+                  {{- else }}
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                        {{- if ne $nodeNames "" }}
+                        {{- $nodeNamesMap := $nodeNames | split " " }}
+                        {{- range $k, $v := $nodeNamesMap }}
+                        - {{ $v }}
+                        {{- end }}
+                        {{- end }}
+                  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-put-controller-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: put
+    queries:
+    - alias: objectName
+  task: |
+    {{- $isMonitor := .Config.VolumeMonitor.enabled | default "true" | lower -}}
+    {{- $monitorVal := .Config.VolumeMonitor.value | default "openebs/m-exporter:0.5.0" -}}
+    apiVersion: extensions/v1beta1
+    Kind: Deployment
+    metadata:
+      labels:
+        openebs.io/storage-engine-type: jiva
+        openebs/volume-provisioner: jiva
+        openebs/controller: jiva-controller
+        openebs.io/controller: jiva-controller
+        vsm: {{ .Volume.owner }}
+        openebs.io/pv: {{ .Volume.owner }}
+      annotations:
+        {{- if eq $isMonitor "true" }}
+        openebs.io/volume-monitor: "true"
+        {{- end}}
+        openebs.io/volume-type: jiva
+      name: {{ .Volume.owner }}-ctrl
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          {{- if eq $isMonitor "true" }}
+          monitoring: volume_exporter_prometheus
+          {{- end}}
+          openebs.io/controller: jiva-controller
+          openebs/controller: jiva-controller
+          openebs.io/pv: {{ .Volume.owner }}
+          vsm: {{ .Volume.owner }}
+      template:
+        metadata:
+          labels:
+            {{- if eq $isMonitor "true" }}
+            monitoring: volume_exporter_prometheus
+            {{- end}}
+            openebs.io/controller: jiva-controller
+            openebs/controller: jiva-controller
+            openebs.io/pv: {{ .Volume.owner }}
+            vsm: {{ .Volume.owner }}
+        spec:
+          containers:
+          - args:
+            - controller
+            - --frontend
+            - gotgt
+            - --clusterIP
+            - {{ .TaskResult.vsvc.clusterIP }}
+            - {{ .Volume.owner }}
+            command:
+            - launch
+            image: {{ .Config.ControllerImage.value }}
+            name: {{ .Volume.owner }}-ctrl-con
+            ports:
+            - containerPort: 3260
+              protocol: TCP
+            - containerPort: 9501
+              protocol: TCP
+          {{- if eq $isMonitor "true" }}
+          - args:
+            - -c=http://127.0.0.1:9501
+            command:
+            - maya-volume-exporter
+            image: {{ $monitorVal }}
+            name: maya-volume-exporter
+            ports:
+            - containerPort: 9500
+              protocol: TCP
+          {{- end}}
+          tolerations:
+          - effect: NoExecute
+            key: node.alpha.kubernetes.io/notReady
+            operator: Exists
+            tolerationSeconds: 0
+          - effect: NoExecute
+            key: node.alpha.kubernetes.io/unreachable
+            operator: Exists
+            tolerationSeconds: 0
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-put-replica-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: put
+    queries:
+    - alias: objectName
+  task: |
+    {{- $isTaintTolerations := .Config.TaintTolerations.value | default "false" -}}
+    {{- $taintTolerationsVal := fromYaml .Config.TaintTolerations.value -}}
+    {{- $isEvictionTolerations := .Config.EvictionTolerations.value | default "false" -}}
+    {{- $evictionTolerationsVal := fromYaml .Config.EvictionTolerations.value -}}
+    {{- $isNodeAffinityRSIE := .Config.NodeAffinityRequiredSchedIgnoredExec.value | default "false" -}}
+    {{- $nodeAffinityRSIEVal := fromYaml .Config.NodeAffinityRequiredSchedIgnoredExec.value -}}
+    {{- $isNodeAffinityPSIE := .Config.NodeAffinityPreferredSchedIgnoredExec.value | default "false" -}}
+    {{- $nodeAffinityPSIEVal := fromYaml .Config.NodeAffinityPreferredSchedIgnoredExec.value -}}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    metadata:
+      labels:
+        openebs.io/storage-engine-type: jiva
+        openebs/volume-provisioner: jiva
+        openebs/replica: jiva-replica
+        openebs.io/replica: jiva-replica
+        vsm: {{ .Volume.owner }}
+        openebs.io/pv: {{ .Volume.owner }}
+        openebs.io/capacity: {{ .Volume.capacity }}
+        #openebs.io/storage-pool-path: "{{ .TaskResult.vpath.storagePoolPath }}"
+      name: {{ .Volume.owner }}-rep
+    spec:
+      replicas: {{ .Config.ReplicaCount.value }}
+      selector:
+        matchLabels:
+          openebs/replica: jiva-replica
+          openebs.io/replica: jiva-replica
+          vsm: {{ .Volume.owner }}
+          openebs.io/pv: {{ .Volume.owner }}
+      template:
+        metadata:
+          labels:
+            openebs/replica: jiva-replica
+            openebs.io/replica: jiva-replica
+            vsm: {{ .Volume.owner }}
+            openebs.io/pv: {{ .Volume.owner }}
+            openebs.io/capacity: {{ .Volume.capacity }}
+            #openebs.io/storage-pool-path: "{{ .TaskResult.vpath.storagePoolPath }}"
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    openebs/replica: jiva-replica
+                    openebs.io/replica: jiva-replica
+                    vsm: {{ .Volume.owner }}
+                    openebs.io/pv: {{ .Volume.owner }}
+                topologyKey: kubernetes.io/hostname
+            nodeAffinity:
+              {{- if ne $isNodeAffinityRSIE "false" }}
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  {{- range $k, $v := $nodeAffinityRSIEVal }}
+                  - 
+                  {{- range $kk, $vv := $v }}
+                    {{ $kk }}: {{ $vv }}
+                  {{- end }}
+                  {{- end }}
+              {{- end }}
+              {{- if ne $isNodeAffinityPSIE "false" }}
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                preference:
+                  matchExpressions:
+                  {{- range $k, $v := $nodeAffinityPSIEVal }}
+                  - 
+                  {{- range $kk, $vv := $v }}
+                    {{ $kk }}: {{ $vv }}
+                  {{- end }}
+                  {{- end }}
+              {{- end }}
+          containers:
+          - args:
+            - replica
+            - --frontendIP
+            - {{ .TaskResult.vsvc.clusterIP }}
+            - --size
+            - {{ .Volume.capacity }}
+            - /openebs
+            command:
+            - launch
+            image: {{ .Config.ReplicaImage.value }}
+            name: {{ .Volume.owner }}-rep-con
+            ports:
+            - containerPort: 9502
+              protocol: TCP
+            - containerPort: 9503
+              protocol: TCP
+            - containerPort: 9504
+              protocol: TCP
+            volumeMounts:
+            - name: openebs
+              mountPath: /openebs
+          tolerations:
+          {{- if ne $isTaintTolerations "false" }}
+          {{- range $k, $v := $taintTolerationsVal }}
+          - 
+          {{- range $kk, $vv := $v }}
+            {{ $kk }}: {{ $vv }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- if ne $isEvictionTolerations "false" }}
+          {{- range $k, $v := $evictionTolerationsVal }}
+          - 
+          {{- range $kk, $vv := $v }}
+            {{ $kk }}: {{ $vv }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          volumes:
+          - name: openebs
+            hostPath:
+              path: {{ .TaskResult.vpath.storagePoolPath }}/{{ .Volume.owner }}
+---

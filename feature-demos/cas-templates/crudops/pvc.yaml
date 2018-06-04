@@ -1,0 +1,17 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: casvolume-claim
+  namespace: default
+  annotations:
+    controller.openebs.io/affinity: pinit
+    controller.openebs.io/affinity-topology: kubernetes.io/hostname
+    controller.openebs.io/affinity-type: soft
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-standard

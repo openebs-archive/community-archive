@@ -1,0 +1,15 @@
+kind: CASVolume
+apiVersion: v1alpha1
+metadata:
+  name: jiva-cas-vol
+  # this namespace has got more priority
+  namespace: default
+  labels:
+    # deprecated way to set capacity
+    volumeprovisioner.mapi.openebs.io/storage-size: 2G
+    k8s.io/storage-class: openebs-repaffinity-0.6.0
+    # this namespace is used if metadata.namespace is empty
+    k8s.io/namespace: default
+    k8s.io/pvc: openebs-repaffinity-0.6.0
+# latest way to set capacity
+capacity: 2G

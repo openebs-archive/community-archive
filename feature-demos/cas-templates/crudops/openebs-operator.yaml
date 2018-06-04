@@ -1,0 +1,246 @@
+---
+# Source: openebs/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openebs
+---
+# StorageClass supported by OpenEBS
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-standard
+  annotations:
+    cas.openebs.io/create-template: cast-standard-0.6.0
+provisioner: openebs.io/provisioner-iscsi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openebs-maya-operator
+  namespace: default
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: castemplates.openebs.io
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: openebs.io
+  # version name to use for REST API: /apis/<group>/<version>
+  version: v1alpha1
+  # either Namespaced or Cluster
+  scope: Cluster
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: castemplates
+    # singular name to be used as an alias on the CLI and for display
+    singular: castemplate
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: CASTemplate
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - cast
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: storagepools.openebs.io
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: openebs.io
+  # version name to use for REST API: /apis/<group>/<version>
+  version: v1alpha1
+  # either Namespaced or Cluster
+  scope: Cluster
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: storagepools
+    # singular name to be used as an alias on the CLI and for display
+    singular: storagepool
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: StoragePool
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - sp
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: storagepoolclaims.openebs.io
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: openebs.io
+  # version name to use for REST API: /apis/<group>/<version>
+  version: v1alpha1
+  # either Namespaced or Cluster
+  scope: Cluster
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: storagepoolclaims
+    # singular name to be used as an alias on the CLI and for display
+    singular: storagepoolclaim
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: StoragePoolClaim
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - spc
+---
+apiVersion: openebs.io/v1alpha1
+kind: StoragePool
+metadata:
+  name: ssd
+  type: hostdir
+spec:
+  path: "/var/myebs"
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: openebs-maya-operator
+rules:
+- apiGroups: ["*"]
+  resources: ["nodes","nodes/proxy"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["*"]
+  resources: ["namespaces", "services", "pods", "deployments", "events", "endpoints", "configmaps"]
+  verbs: ["*"]
+- apiGroups: ["*"]
+  resources: ["persistentvolumes","persistentvolumeclaims"]
+  verbs: ["*"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["*"]
+- apiGroups: ["*"]
+  resources: ["storagepools", "castemplates"]
+  verbs: ["get", "list"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: openebs-maya-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: openebs-maya-operator
+subjects:
+- kind: ServiceAccount
+  name: openebs-maya-operator
+  namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: maya-apiserver-service
+  namespace: default
+  labels:
+    app: openebs
+    role: apiserver
+spec:
+  ports:
+  - name: api
+    port: 5656
+    targetPort: 5656
+    protocol: TCP
+  selector:
+    app: openebs
+    role: apiserver
+  sessionAffinity: None
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: maya-apiserver
+  namespace: default
+  labels:
+    app: openebs
+    role: apiserver
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: openebs
+        role: apiserver
+    spec:
+      serviceAccountName: openebs-maya-operator
+      containers:
+      - name: openebs-maya-apiserver
+        image: "openebs/m-apiserver:castemplate"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5656
+        env:
+        # OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE enables cas template feature;
+        # valid values are 'on' and 'off'. This feature is disabled by default.
+        - name: OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE
+          value: "on"
+        # OPENEBS_IO_KUBE_CONFIG enables maya api service to connect to K8s
+        # based on this config. This is ignored if empty.
+        # This is supported for maya api server version 0.5.2 onwards
+        #- name: OPENEBS_IO_KUBE_CONFIG
+        #  value: "/home/ubuntu/.kube/config"
+        # OPENEBS_IO_K8S_MASTER enables maya api service to connect to K8s
+        # based on this address. This is ignored if empty.
+        # This is supported for maya api server version 0.5.2 onwards
+        #- name: OPENEBS_IO_K8S_MASTER
+        #  value: "http://172.28.128.3:8080"
+        #- name: OPENEBS_IO_JIVA_CONTROLLER_IMAGE
+        #  value: "openebs/jiva:0.5.3"
+        #- name: OPENEBS_IO_JIVA_REPLICA_IMAGE
+        #  value: "openebs/jiva:0.5.3"
+        #- name: OPENEBS_IO_VOLUME_MONITOR_IMAGE
+        #  value: "openebs/m-exporter:0.5.3"
+        #- name: OPENEBS_IO_JIVA_REPLICA_COUNT
+        #  value: "3"
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: openebs-provisioner
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: openebs-provisioner
+    spec:
+      serviceAccountName: openebs-maya-operator
+      containers:
+      - name: openebs-provisioner
+        imagePullPolicy: Always
+        image: openebs/openebs-k8s-provisioner:0.5.4
+        env:
+        # OPENEBS_IO_K8S_MASTER enables openebs provisioner to connect to K8s
+        # based on this address. This is ignored if empty.
+        # This is supported for openebs provisioner version 0.5.2 onwards
+        #- name: OPENEBS_IO_K8S_MASTER
+        #  value: "http://10.128.0.12:8080"
+        # OPENEBS_IO_KUBE_CONFIG enables openebs provisioner to connect to K8s
+        # based on this config. This is ignored if empty.
+        # This is supported for openebs provisioner version 0.5.2 onwards
+        #- name: OPENEBS_IO_KUBE_CONFIG
+        #  value: "/home/ubuntu/.kube/config"
+        # OPENEBS_VALID_FSTYPE enables openebs provisioner to provision openebs
+        # volume other then ext4(default fstype). After adding "openebs.io/fstype"
+        # parameters in StorageClasse will provision the volume with specified fstype.
+        # This is ignored if empty.
+        # This is supported for openebs provisioner version 0.5.4 onwards
+        #- name: OPENEBS_VALID_FSTYPE
+        #  value: "ext4,xfs"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: OPENEBS_MONITOR_URL
+          value: "http://127.0.0.1:32515/dashboard/db/openebs-volume-stats?orgId=1"
+        - name: OPENEBS_MONITOR_VOLKEY
+          value: "&var-OpenEBS"
+        - name: MAYA_PORTAL_URL
+          value: "https://mayaonline.io/"

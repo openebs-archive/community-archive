@@ -1,0 +1,71 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: cast-standard-0.6.0
+spec:
+  defaultConfig:
+  - name: VolumeMonitor
+    enabled: "true"
+  - name: ControllerImage
+    value: openebs/jiva:0.5.0
+  - name: ReplicaImage
+    value: openebs/jiva:0.5.0
+  - name: ReplicaCount
+    value: "1"
+  - name: StoragePool
+    value: ssd
+  - name: TaintTolerations
+    value: |-
+      t1:
+        key: node.openebs.io/disktype
+        operator: Equal
+        value: ssd
+        effect: NoSchedule
+      t2:
+        key: node.openebs.io/disktype
+        operator: Equal
+        value: ssd
+        effect: NoExecute
+  - name: EvictionTolerations
+    value: |-
+      t1:
+        effect: NoExecute
+        key: node.alpha.kubernetes.io/notReady
+        operator: Exists
+      t2:
+        effect: NoExecute
+        key: node.alpha.kubernetes.io/unreachable
+        operator: Exists
+  - name: NodeAffinityRequiredSchedIgnoredExec
+    value: |-
+      t1:
+        key: beta.kubernetes.io/os
+        operator: In
+        values:
+        - linux
+  - name: NodeAffinityPreferredSchedIgnoredExec
+    value: |-
+      t1:
+        key: some-node-label-key
+        operator: In
+        values:
+        - some-node-label-value
+  run:
+    taskNamespace: default
+    tasks:
+    - task: volume-create-put-service-0.6.0
+      id: vsvc
+    - task: volume-create-get-path-0.6.0
+      id: vpath
+    #- task: volume-create-get-pvc-0.6.0
+    #  id: vpvc
+    - task: volume-create-put-controller-0.6.0
+      id: vctrl
+    - task: volume-create-put-replica-0.6.0
+      id: vrep
+    - task: volume-create-list-replica-pods-0.6.0
+      id: vreplist
+    - task: volume-create-patch-replica-0.6.0
+      id: vreppatch
+    output: 
+      task: volume-create-output-0.6.0
