@@ -1,0 +1,12 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: list-cas-tpl
+spec:
+  taskNamespace: default
+  run:
+    tasks:
+    - volume-list-list-controller-service-0.6.0
+    - volume-list-list-controller-pods-0.6.0
+    - volume-list-list-replica-pods-0.6.0
+  output: volume-list-output-0.6.0

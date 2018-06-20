@@ -1,3 +1,118 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-list-list-controller-service-0.6.0
+  namespace: default
+data:
+  meta: |
+    {{- $nss := .Volume.runNamespace | default "" | splitList ", " -}}
+    id: listlistsvc
+    repeatWith: 
+      kind: namespace
+      resources:
+      {{- range $k, $ns := $nss }} 
+      - {{ $ns }}
+      {{- end }}
+    apiVersion: v1
+    kind: Service
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller-service=jiva-controller-svc
+  post: |
+    {{- $servicePairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} clusterIP={@.spec.clusterIP};{end}` | trim | default "" | splitList ";" -}}
+    {{- $servicePairs | asKeyMap "volumeList" .ListItems | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-list-list-controller-pods-0.6.0
+  namespace: default
+data:
+  meta: |
+    {{- $nss := .Volume.runNamespace | default "" | splitList ", " -}}
+    id: listlistctrl
+    repeatWith: 
+      kind: namespace
+      resources: 
+      {{- range $k, $ns := $nss }} 
+      - {{ $ns }}
+      {{- end }}
+    apiVersion: v1
+    kind: Pod
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller=jiva-controller
+  post: |
+    {{- $controllerPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} controllerIP={@.status.podIP} controllerStatus={@.status.containerStatuses[*].ready};{end}` | trim | default "" | splitList ";" -}}
+    {{- $controllerPairs | asKeyMap "volumeList" .ListItems | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-list-list-replica-pods-0.6.0
+  namespace: default
+data:
+  meta: |
+    {{- $nss := .Volume.runNamespace | default "" | splitList ", " -}}
+    id: listlistrep
+    repeatWith: 
+      kind: namespace
+      resources: 
+      {{- range $k, $ns := $nss }} 
+      - {{ $ns }}
+      {{- end }}
+    apiVersion: v1
+    kind: Pod
+    action: list
+    options: |-
+      labelSelector: openebs.io/replica=jiva-replica
+  post: |
+    {{- $replicaPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} replicaIP={@.status.podIP} replicaStatus={@.status.containerStatuses[*].ready} capacity={@.metadata.labels.openebs\.io/capacity};{end}` | trim | default "" | splitList ";" -}}
+    {{- $replicaPairs | asKeyMap "volumeList" .ListItems | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-list-output-0.6.0
+  namespace: default
+data:
+  meta: |
+    id : listoutput
+    action: output
+    kind: CASVolumeList
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolumeList
+    items:
+    {{- range $pkey, $map := .ListItems.volumeList }}
+    {{- $capacity := pluck "capacity" $map | first | default "" | splitList ", " | first }}
+    {{- $clusterIP := pluck "clusterIP" $map | first }}
+    {{- $controllerIP := pluck "controllerIP" $map | first }}
+    {{- $controllerStatus := pluck "controllerStatus" $map | first }}
+    {{- $replicaIP := pluck "replicaIP" $map | first }}
+    {{- $replicaStatus := pluck "replicaStatus" $map | first }}
+    {{- $name := $pkey | splitList "/" | last }}
+    {{- $ns := $pkey | splitList "/" | first }}
+      - kind: CASVolume
+        apiVersion: v1alpha1
+        metadata:
+          name: {{ $name }}
+          namespace: {{ $ns }}
+          annotations:
+            vsm.openebs.io/controller-ips: {{ $controllerIP }}
+            vsm.openebs.io/cluster-ips: {{ $clusterIP }}
+            vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ $name }}
+            vsm.openebs.io/replica-count: {{ $replicaIP | default "" | splitList ", " | len }}
+            vsm.openebs.io/volume-size: {{ $capacity }}
+            vsm.openebs.io/replica-ips: {{ $replicaIP }}
+            vsm.openebs.io/replica-status: {{ $replicaStatus | replace "true" "running" | replace "false" "notready" }}
+            vsm.openebs.io/controller-status: {{ $controllerStatus | replace "true" "running" | replace "false" "notready" }}
+            vsm.openebs.io/targetportals: {{ $clusterIP }}:3260
+        spec:
+          capacity: {{ $capacity }}
+    {{- end -}}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,19 +120,17 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: readlistsvc
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: Service
     action: list
     options: |-
       labelSelector: openebs.io/controller-service=jiva-controller-svc,openebs.io/pv={{ .Volume.owner }}
-    queries:
-    - alias: objectName
-      path: |-
-        {.kind}
-    - alias: clusterIP
-      path: |-
-        {.items[*].spec.clusterIP}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "readlistsvc.items" .TaskResult | noop -}}
+    {{- .TaskResult.readlistsvc.items | notFoundErr "controller service not found" | saveIf "readlistsvc.notFoundErr" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].spec.clusterIP}" | trim | saveAs "readlistsvc.clusterIP" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -26,22 +139,18 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: readlistctrl
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: Pod
     action: list
     options: |-
       labelSelector: openebs.io/controller=jiva-controller,openebs.io/pv={{ .Volume.owner }}
-    queries:
-    - alias: objectName
-      path: |-
-        {.kind}
-    - alias: podIP
-      path: |-
-        {.items[*].status.podIP}
-    - alias: status
-      path: |-
-        {.items[*].status.containerStatuses[*].ready}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "readlistctrl.items" .TaskResult | noop -}}
+    {{- .TaskResult.readlistctrl.items | notFoundErr "controller pod not found" | saveIf "readlistctrl.notFoundErr" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].status.podIP}" | trim | saveAs "readlistctrl.podIP" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].status.containerStatuses[*].ready}" | trim | saveAs "readlistctrl.status" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -50,28 +159,19 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: readlistrep
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: Pod
     action: list
     options: |-
       labelSelector: openebs.io/replica=jiva-replica,openebs.io/pv={{ .Volume.owner }}
-    queries:
-    - alias: objectName
-      path: |-
-        {.kind}
-    - alias: capacity
-      path: |-
-        {.items[*].metadata.labels.openebs\.io/capacity}
-    - alias: poolPath
-      path: |-
-        {.items[*].metadata.labels.openebs\.io/storage-pool-path}
-    - alias: podIP
-      path: |-
-        {.items[*].status.podIP}
-    - alias: status
-      path: |-
-        {.items[*].status.containerStatuses[*].ready}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "readlistrep.items" .TaskResult | noop -}}
+    {{- .TaskResult.readlistrep.items | notFoundErr "replica pod(s) not found" | saveIf "readlistrep.notFoundErr" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].status.podIP}" | trim | saveAs "readlistrep.podIP" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].status.containerStatuses[*].ready}" | trim | saveAs "readlistrep.status" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult `{.items[*].metadata.labels.openebs\.io/capacity}` | trim | saveAs "readlistrep.capacity" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -80,47 +180,28 @@ metadata:
   namespace: default
 data:
   meta: |
+    id : readoutput
     action: output
     kind: CASVolume
     apiVersion: v1alpha1
   task: |
+    {{- $capacity := .TaskResult.readlistrep.capacity | default "" | splitList " " | first -}}
     kind: CASVolume
     apiVersion: v1alpha1
     metadata:
       name: {{ .Volume.owner }}
       annotations:
-        vsm.openebs.io/controller-ips: {{ splitList " " .TaskResult.readctrls.podIP | first }}
-        vsm.openebs.io/cluster-ips: {{ splitList " " .TaskResult.readsvc.clusterIP | first }}
+        vsm.openebs.io/controller-ips: {{ .TaskResult.readlistctrl.podIP | default "" | splitList " " | first }}
+        vsm.openebs.io/cluster-ips: {{ .TaskResult.readlistsvc.clusterIP }}
         vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ .Volume.owner }}
-        vsm.openebs.io/replica-count: {{ splitList " " .TaskResult.readreps.podIP | len }}
-        vsm.openebs.io/volume-size: {{ splitList " " .TaskResult.readreps.capacity | first }}
-        vsm.openebs.io/controller-status: {{ splitList " " .TaskResult.readctrls.status | join "," }}
-        vsm.openebs.io/replica-ips: {{ splitList " " .TaskResult.readreps.podIP | join "," }}
-        vsm.openebs.io/replica-status: {{ splitList " " .TaskResult.readreps.status | join "," }}
-        vsm.openebs.io/targetportals: {{ splitList " " .TaskResult.readsvc.clusterIP | first }}:3260
-    capacity: {{ splitList " " .TaskResult.readreps.capacity | first }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: volume-create-output-0.6.0
-  namespace: default
-data:
-  meta: |
-    action: output
-    kind: CASVolume
-    apiVersion: v1alpha1
-  task: |
-    kind: CASVolume
-    apiVersion: v1alpha1
-    metadata:
-      name: {{ .Volume.owner }}
-      annotations:
-        vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ .Volume.owner }}
-        vsm.openebs.io/replica-count: {{ .Config.ReplicaCount.value }}
-        vsm.openebs.io/volume-size: {{ .Volume.capacity }}
-        vsm.openebs.io/targetportals: {{ .TaskResult.vsvc.clusterIP }}:3260
-    capacity: {{ .Volume.capacity }}
+        vsm.openebs.io/replica-count: {{ .TaskResult.readlistrep.podIP | default "" | splitList " " | len }}
+        vsm.openebs.io/volume-size: {{ $capacity }}
+        vsm.openebs.io/replica-ips: {{ .TaskResult.readlistrep.podIP | default "" | splitList " " | join "," }}
+        vsm.openebs.io/replica-status: {{ .TaskResult.readlistrep.status | default "" | splitList " " | join "," | replace "true" "running" | replace "false" "notready" }}
+        vsm.openebs.io/controller-status: {{ .TaskResult.readlistctrl.status | default "" | splitList " " | join "," | replace "true" "running" | replace "false" "notready" }}
+        vsm.openebs.io/targetportals: {{ .TaskResult.readlistsvc.clusterIP }}:3260
+    spec:
+      capacity: {{ $capacity }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -129,15 +210,14 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: createputsvc
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: Service
     action: put
-    queries:
-    - alias: objectName
-    - alias: clusterIP
-      path: |-
-        {.spec.clusterIP}
+  post: |
+    {{- jsonpath .JsonResult "{.metadata.name}" | trim | saveAs "createputsvc.objectName" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.spec.clusterIP}" | trim | saveAs "createputsvc.clusterIP" .TaskResult | noop -}}
   task: |
     apiVersion: v1
     Kind: Service
@@ -173,16 +253,14 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: creategetpath
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     objectName: {{ .Config.StoragePool.value }}
     action: get
-    queries:
-    - alias: objectName
-    - alias: storagePoolPath
-      path: |-
-        {.spec.path}
+  post: |
+    {{- jsonpath .JsonResult "{.spec.path}" | trim | saveAs "creategetpath.storagePoolPath" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -191,30 +269,25 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: creategetpvc
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: PersistentVolumeClaim
     objectName: {{ .Volume.pvc }}
     action: get
-    queries:
-    - alias: objectName
-    - alias: affinity
-      path: |-
-        {.metadata.annotations.controller\.openebs\.io/affinity}
-    - alias: affinityTopology
-      path: |-
-        {.metadata.annotations.controller\.openebs\.io/affinity-topology}
-    - alias: affinityType
-      path: |-
-        {.metadata.annotations.controller\.openebs\.io/affinity-type}
+  post: |
+    {{- jsonpath .JsonResult `{.metadata.annotations.controller\.openebs\.io/affinity}` | trim | saveAs "creategetpvc.affinity" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult `{.metadata.annotations.controller\.openebs\.io/affinity-topology}` | trim | saveAs "creategetpvc.affinityTopology" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult `{.metadata.annotations.controller\.openebs\.io/affinity-type}` | trim | saveAs "creategetpvc.affinityType" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: volume-create-list-replica-pods-0.6.0
+  name: volume-create-list-replica-pod-0.6.0
   namespace: default
 data:
   meta: |
+    id: createlistrep
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: v1
     kind: Pod
@@ -222,16 +295,12 @@ data:
     options: |-
       labelSelector: openebs.io/replica=jiva-replica,openebs.io/pv={{ .Volume.owner }}
     retry: "10,30s"
-    queries:
-    - alias: objectName
-      path: |-
-        {.kind}
-    - alias: nodeNames
-      path: |-
-        {.items[*].spec.nodeName}
-      verify:
-        split: " "
-        count: {{ .Config.ReplicaCount.value }}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "createlistrep.items" .TaskResult | noop -}}
+    {{- .TaskResult.createlistrep.items | empty | verifyErr "replica pod(s) not found" | saveIf "createlistrep.verifyErr" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.items[*].spec.nodeName}" | trim | saveAs "createlistrep.nodeNames" .TaskResult | noop -}}
+    {{- $expectedRepCount := .Config.ReplicaCount.value | int -}}
+    {{- .TaskResult.createlistrep.nodeNames | default "" | splitList " " | isLen $expectedRepCount | not | verifyErr "number of replica pods does not match expected count" | saveIf "createlistrep.verifyErr" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -240,17 +309,16 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: createpatchrep
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: extensions/v1beta1
     kind: Deployment
     objectName: {{ .Volume.owner }}-rep
     action: patch
-    queries:
-    - alias: objectName
   task: |
       {{- $isNodeAffinityRSIE := .Config.NodeAffinityRequiredSchedIgnoredExec.value | default "false" -}}
       {{- $nodeAffinityRSIEVal := fromYaml .Config.NodeAffinityRequiredSchedIgnoredExec.value -}}
-      {{- $nodeNames := .TaskResult.vreplist.nodeNames -}}
+      {{- $nodeNames := .TaskResult.createlistrep.nodeNames -}}
       type: strategic
       pspec: |-
         spec:
@@ -299,12 +367,13 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: createputctrl
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: extensions/v1beta1
     kind: Deployment
     action: put
-    queries:
-    - alias: objectName
+  post: |
+    {{- jsonpath .JsonResult "{.metadata.name}" | trim | saveAs "createputctrl.objectName" .TaskResult | noop -}}
   task: |
     {{- $isMonitor := .Config.VolumeMonitor.enabled | default "true" | lower -}}
     {{- $monitorVal := .Config.VolumeMonitor.value | default "openebs/m-exporter:0.5.0" -}}
@@ -352,7 +421,7 @@ data:
             - --frontend
             - gotgt
             - --clusterIP
-            - {{ .TaskResult.vsvc.clusterIP }}
+            - {{ .TaskResult.createputsvc.clusterIP }}
             - {{ .Volume.owner }}
             command:
             - launch
@@ -391,12 +460,13 @@ metadata:
   namespace: default
 data:
   meta: |
+    id: createputrep
     runNamespace: {{ .Volume.runNamespace }}
     apiVersion: extensions/v1beta1
     kind: Deployment
     action: put
-    queries:
-    - alias: objectName
+  post: |
+    {{- jsonpath .JsonResult "{.metadata.name}" | trim | saveAs "createputrep.objectName" .TaskResult | noop -}}
   task: |
     {{- $isTaintTolerations := .Config.TaintTolerations.value | default "false" -}}
     {{- $taintTolerationsVal := fromYaml .Config.TaintTolerations.value -}}
@@ -417,7 +487,6 @@ data:
         vsm: {{ .Volume.owner }}
         openebs.io/pv: {{ .Volume.owner }}
         openebs.io/capacity: {{ .Volume.capacity }}
-        #openebs.io/storage-pool-path: "{{ .TaskResult.vpath.storagePoolPath }}"
       name: {{ .Volume.owner }}-rep
     spec:
       replicas: {{ .Config.ReplicaCount.value }}
@@ -435,7 +504,6 @@ data:
             vsm: {{ .Volume.owner }}
             openebs.io/pv: {{ .Volume.owner }}
             openebs.io/capacity: {{ .Volume.capacity }}
-            #openebs.io/storage-pool-path: "{{ .TaskResult.vpath.storagePoolPath }}"
         spec:
           affinity:
             podAntiAffinity:
@@ -475,7 +543,7 @@ data:
           - args:
             - replica
             - --frontendIP
-            - {{ .TaskResult.vsvc.clusterIP }}
+            - {{ .TaskResult.createputsvc.clusterIP }}
             - --size
             - {{ .Volume.capacity }}
             - /openebs
@@ -513,5 +581,145 @@ data:
           volumes:
           - name: openebs
             hostPath:
-              path: {{ .TaskResult.vpath.storagePoolPath }}/{{ .Volume.owner }}
+              path: {{ .TaskResult.creategetpath.storagePoolPath }}/{{ .Volume.owner }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-create-output-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: createoutput
+    action: output
+    kind: CASVolume
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolume
+    apiVersion: v1alpha1
+    metadata:
+      name: {{ .Volume.owner }}
+      annotations:
+        vsm.openebs.io/iqn: iqn.2016-09.com.openebs.jiva:{{ .Volume.owner }}
+        vsm.openebs.io/replica-count: {{ .Config.ReplicaCount.value }}
+        vsm.openebs.io/volume-size: {{ .Volume.capacity }}
+        vsm.openebs.io/targetportals: {{ .TaskResult.createputsvc.clusterIP }}:3260
+    spec:
+      capacity: {{ .Volume.capacity }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-list-controller-service-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletelistsvc
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Service
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller-service=jiva-controller-svc,openebs.io/pv={{ .Volume.owner }}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "deletelistsvc.names" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistsvc.names | notFoundErr "controller service not found" | saveIf "deletelistsvc.notFoundErr" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistsvc.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. of controller services is not 1" | saveIf "deletelistsvc.verifyErr" .TaskResult | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-list-controller-deployment-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletelistctrl
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: list
+    options: |-
+      labelSelector: openebs.io/controller=jiva-controller,openebs.io/pv={{ .Volume.owner }}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "deletelistctrl.names" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistctrl.names | notFoundErr "controller deployment not found" | saveIf "deletelistctrl.notFoundErr" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistctrl.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. of controller deployments is not 1" | saveIf "deletelistctrl.verifyErr" .TaskResult | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-list-replica-deployment-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletelistrep
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: list
+    options: |-
+      labelSelector: openebs.io/replica=jiva-replica,openebs.io/pv={{ .Volume.owner }}
+  post: |
+    {{- jsonpath .JsonResult "{.items[*].metadata.name}" | trim | saveAs "deletelistrep.names" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistrep.names | notFoundErr "replica deployment not found" | saveIf "deletelistrep.notFoundErr" .TaskResult | noop -}}
+    {{- .TaskResult.deletelistrep.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. of replica deployments is not 1" | saveIf "deletelistrep.verifyErr" .TaskResult | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-delete-controller-service-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletedeletesvc
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: v1
+    kind: Service
+    action: delete
+    objectName: {{ .TaskResult.deletelistsvc.names }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-delete-controller-deployment-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletedeletectrl
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: delete
+    objectName: {{ .TaskResult.deletelistctrl.names }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-delete-replica-deployment-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletedeleterep
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    action: delete
+    objectName: {{ .TaskResult.deletelistrep.names }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: volume-delete-output-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deleteoutput
+    action: output
+    kind: CASVolume
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolume
+    apiVersion: v1alpha1
+    metadata:
+      name: {{ .Volume.owner }}
 ---

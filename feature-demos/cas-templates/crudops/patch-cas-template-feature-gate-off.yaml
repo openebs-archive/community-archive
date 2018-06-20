@@ -1,0 +1,10 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: openebs-maya-apiserver
+        env:
+        # OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE enables cas template feature;
+        # valid values are 'on' and 'off'. This feature is disabled by default.
+        - name: OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE
+          value: "off"

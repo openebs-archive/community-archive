@@ -171,7 +171,8 @@ spec:
       serviceAccountName: openebs-maya-operator
       containers:
       - name: openebs-maya-apiserver
-        image: "openebs/m-apiserver:castemplate"
+        #image: "openebs/m-apiserver:castemplate"
+        image: "openebs/m-apiserver:castemplate2"
         imagePullPolicy: Always
         ports:
         - containerPort: 5656

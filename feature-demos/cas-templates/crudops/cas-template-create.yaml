@@ -50,22 +50,14 @@ spec:
         operator: In
         values:
         - some-node-label-value
+  taskNamespace: default
   run:
-    taskNamespace: default
     tasks:
-    - task: volume-create-put-service-0.6.0
-      id: vsvc
-    - task: volume-create-get-path-0.6.0
-      id: vpath
-    #- task: volume-create-get-pvc-0.6.0
-    #  id: vpvc
-    - task: volume-create-put-controller-0.6.0
-      id: vctrl
-    - task: volume-create-put-replica-0.6.0
-      id: vrep
-    - task: volume-create-list-replica-pods-0.6.0
-      id: vreplist
-    - task: volume-create-patch-replica-0.6.0
-      id: vreppatch
-    output: 
-      task: volume-create-output-0.6.0
+    - volume-create-put-service-0.6.0
+    - volume-create-get-path-0.6.0
+    #- volume-create-get-pvc-0.6.0
+    - volume-create-put-controller-0.6.0
+    - volume-create-put-replica-0.6.0
+    - volume-create-list-replica-pod-0.6.0
+    - volume-create-patch-replica-0.6.0
+  output: volume-create-output-0.6.0

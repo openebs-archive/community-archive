@@ -3,14 +3,10 @@ kind: CASTemplate
 metadata:
   name: read-cas-tpl
 spec:
+  taskNamespace: default
   run:
-    taskNamespace: default
     tasks:
-    - task: volume-read-list-controller-service-0.6.0
-      id: readsvc
-    - task: volume-read-list-replica-pods-0.6.0
-      id: readreps
-    - task: volume-read-list-controller-pods-0.6.0
-      id: readctrls
-    output: 
-      task: volume-read-output-0.6.0
+    - volume-read-list-controller-service-0.6.0
+    - volume-read-list-controller-pods-0.6.0
+    - volume-read-list-replica-pods-0.6.0
+  output: volume-read-output-0.6.0

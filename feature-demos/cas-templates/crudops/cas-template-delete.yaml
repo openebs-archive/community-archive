@@ -1,0 +1,15 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: delete-cas-tpl
+spec:
+  taskNamespace: default
+  run:
+    tasks:
+    - volume-delete-list-controller-service-0.6.0
+    - volume-delete-list-controller-deployment-0.6.0
+    - volume-delete-list-replica-deployment-0.6.0
+    - volume-delete-delete-controller-service-0.6.0
+    - volume-delete-delete-controller-deployment-0.6.0
+    - volume-delete-delete-replica-deployment-0.6.0
+  output: volume-delete-output-0.6.0
