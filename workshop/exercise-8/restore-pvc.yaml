@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-snap-vol-claim
+  annotations:
+    snapshot.alpha.kubernetes.io/snapshot: snapshot-blue
+spec:
+  storageClassName: snapshot-promoter
+  accessModes: 
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1G

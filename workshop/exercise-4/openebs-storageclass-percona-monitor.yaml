@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+    name: sc-percona-monitor
+provisioner: openebs.io/provisioner-iscsi
+parameters:
+    openebs.io/jiva-replica-image: "openebs/jiva:0.6.0"
+    openebs.io/volume-monitor: "true"

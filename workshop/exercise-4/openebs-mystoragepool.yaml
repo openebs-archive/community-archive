@@ -1,0 +1,24 @@
+# A storage admin (human) may want to manage storage resources manually. This 
+# config file is expected to provide such option
+#
+# StoragePool : Is an instance of storage pool - i.e.
+#  - a directory on host-os, or
+#  - a directory on mounted-disk, 
+#
+# Define a storage pool for launching the replicas using
+#  local directory or mounted directory on kubernetes nodes
+#  
+# The following is an example of how a storagepool can be 
+# confgured with any other directory to be used for persisting 
+# the storage. 
+#
+# Note: OpenEBS uses /var/openebs as default directory, even if 
+# the following default storagepool is not added to the k8s cluster.
+#
+apiVersion: openebs.io/v1alpha1
+kind: StoragePool
+metadata:
+  name: sp-mntdir
+  type: hostdir
+spec:
+  path: "/mnt/openebs"
