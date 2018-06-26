@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: blue
+spec:
+  restartPolicy: Never
+  containers:
+  - name: blue
+    image: busybox
+    command:
+    - "/bin/sh"
+    - "-c"
+    - "while true; do date >> /tmp/pod-out.txt; sleep 1; done"
+    volumeMounts:
+    - name: blue-volume
+      mountPath: /tmp
+  volumes:
+  - name: blue-volume
+    persistentVolumeClaim:
+      claimName: demo-vol1-claim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: demo-vol1-claim
+spec:
+  storageClassName: openebs-standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1G

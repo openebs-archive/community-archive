@@ -1,0 +1,11 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: openebs-mongodb
+provisioner: openebs.io/provisioner-iscsi
+parameters:
+  openebs.io/storage-pool: "test-mntdir"
+  openebs.io/jiva-replica-count: "1"
+  openebs.io/volume-monitor: "true"
+  openebs.io/capacity: 5G
+  openebs.io/fstype: "xfs"

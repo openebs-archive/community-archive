@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: green
+  labels:
+    name: green
+    app: green
+spec:
+  containers:
+  - resources:
+      limits:
+        cpu: 0.5
+    name: green
+    image: percona
+    args:
+      - "--ignore-db-dir"
+      - "lost+found"
+    env:
+      - name: MYSQL_ROOT_PASSWORD
+        value: k8sDem0
+    ports:
+      - containerPort: 3306
+        name: mysql
+    volumeMounts:
+    - mountPath: /var/lib/mysql
+      name: demo-snap-vol1
+  volumes:
+  - name: demo-snap-vol1
+    persistentVolumeClaim:
+      claimName: demo-snap-vol-claim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-snap-vol-claim
+  annotations:
+    snapshot.alpha.kubernetes.io/snapshot: snapshot-blue
+spec:
+  storageClassName: snapshot-promoter
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5G
+
