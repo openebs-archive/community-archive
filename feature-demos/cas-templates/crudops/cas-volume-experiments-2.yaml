@@ -1,0 +1,10 @@
+kind: CASVolume
+apiVersion: v1alpha1
+metadata:
+  name: casvolume-exp-2
+  namespace: default
+  labels:
+    openebs.io/storage-class: openebs-experiment
+    openebs.io/pvc: casvolume-claim-exp-2
+spec:
+  capacity: 2G

@@ -11,7 +11,7 @@ kind: StorageClass
 metadata:
   name: openebs-standard
   annotations:
-    cas.openebs.io/create-template: cast-standard-0.6.0
+    cas.openebs.io/create-volume-template: cast-standard-0.6.0
 provisioner: openebs.io/provisioner-iscsi
 ---
 apiVersion: v1
@@ -172,7 +172,7 @@ spec:
       containers:
       - name: openebs-maya-apiserver
         #image: "openebs/m-apiserver:castemplate"
-        image: "openebs/m-apiserver:castemplate2"
+        image: "openebs/m-apiserver:castemplate3"
         imagePullPolicy: Always
         ports:
         - containerPort: 5656

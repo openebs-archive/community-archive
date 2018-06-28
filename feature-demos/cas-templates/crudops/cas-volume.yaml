@@ -11,5 +11,6 @@ metadata:
     # this namespace is used if metadata.namespace is empty
     openebs.io/namespace: default
     openebs.io/pvc: casvolume-claim
-# latest way to set capacity
-capacity: 2G
+spec:
+  # latest way to set capacity
+  capacity: 2G

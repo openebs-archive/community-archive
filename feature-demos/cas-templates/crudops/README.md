@@ -4,7 +4,7 @@
   - Design - https://docs.google.com/document/d/1SC2U1Xwn0wKQAhwmQNa7QIZjyWICGl_dgxu63ASndUI/
   - PRs:
     - https://github.com/openebs/maya/pull/346
-    - 
+    - https://github.com/openebs/maya/pull/376
 
 ### Setup of Kubernetes & OpenEBS
 - sh minikube.sh
@@ -90,7 +90,7 @@
 
 - Try with correct namespace
   - curl -H "namespace: openebs" -X DELETE http://"$(kubectl get svc maya-apiserver-service --template={{.spec.clusterIP}})":5656/latest/volumes/jiva-cas-vol-two
-  
+
 ### Create CAS Volume via CAS Template using PVC -- FUTURE
 - `kubectl apply -f pvc.yaml`
 - Verify creation of CAS volume:
