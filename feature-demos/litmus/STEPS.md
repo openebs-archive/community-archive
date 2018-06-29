@@ -59,8 +59,8 @@ Note: The existing litmus job has to be cleaned up before re-running
 
 With the same workload run as part of the demo, the numbers obtained were are follows: 
 
-Local PV : 1474.000 TpmC
-OpenEBS  : 982.500 TpmC
+- Local PV : 1474.000 TpmC
+- OpenEBS  : 982.500 TpmC
 
 
 
