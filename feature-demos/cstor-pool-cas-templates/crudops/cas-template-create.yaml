@@ -1,0 +1,17 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: cast-standard-cstorpool-0.6.0
+spec:
+  defaultConfig:
+  - name: CstorPoolImage
+    value: gkganeshr/cstor-pool:v1.1
+  - name: CstorPoolMgmtImage
+    value: gkganeshr/cstor-pool-mgmt:v2.3
+  taskNamespace: default
+  run:
+    tasks:
+    - cstor-pool-create-list-disk-0.6.0
+    - cstor-pool-create-list-node-0.6.0
+    - cstor-pool-create-put-cr-0.6.0
+    - cstor-pool-create-put-deployment-0.6.0
