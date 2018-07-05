@@ -31,7 +31,7 @@ data:
       labelSelector: diskName in ({{.TaskResult.cstorpoollistdisk.disk}})
     retry: "10,30s"
   post: |
-    {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes {@.metadata.labels.kubernetes\.io/hostname}={@.metadata.name};{end}` | trim | default "" | splitList ";" -}}
+    {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes {@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};{end}` | trim | default "" | splitList ";" -}}
     {{- $nodesList | asKeyMap "cstorNodePoolList" .ListItems | noop -}}
 ---
 apiVersion: v1
@@ -68,6 +68,8 @@ data:
         diskList: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodePoolList.nodes }}
       poolSpec:
         poolType: {{.CstorPool.poolType}}
+    status:
+      phase: {{ .CstorPool.phase }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -106,8 +108,8 @@ data:
             app: cstor-pool
         spec:
           serviceAccountName: openebs-maya-operator
-            #nodeSelector:
-            #  kubernetes.io/hostname: "gke-test-default-pool-9cb32f2f-1jc1"
+          nodeSelector:
+            kubernetes.io/hostname: {{ .ListItems.currentRepeatResource}}
           containers:
           - name: cstor-pool
             # The image name here will be changed to openebs once the business logic pr is reviewed and merged in openebs/maya.
