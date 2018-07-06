@@ -7,7 +7,7 @@ spec:
   - name: CstorPoolImage
     value: gkganeshr/cstor-pool:v1.1
   - name: CstorPoolMgmtImage
-    value: gkganeshr/cstor-pool-mgmt:v2.3
+    value: gkganeshr/cstor-pool-mgmt:v2.6
   taskNamespace: default
   run:
     tasks:
