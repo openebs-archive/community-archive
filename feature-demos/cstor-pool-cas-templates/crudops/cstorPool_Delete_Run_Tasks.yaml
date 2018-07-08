@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-delete-list-deploy-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: cstorpoollistdeploy
+    apiVersion: extensions/v1beta1 
+    runNamespace: default
+    kind: Deployment
+    action: list
+    options: |-
+      labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
+    retry: "10,30s"
+  post: |
+    {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds {@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}
+    {{- $csds | asKeyMap "csdlist" .ListItems | noop -}}

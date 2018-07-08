@@ -1,0 +1,15 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: cstor-pool-delete-cast
+spec:
+  defaultConfig:
+  - name: CstorPoolMgmtImage
+    value: gkganeshr/cstor-pool-mgmt:v2.3
+  taskNamespace: default
+  run:
+    tasks:
+    - cstor-pool-delete-listcsp-0.6.0
+    - cstor-pool-delete-delete-csp-0.6.0
+    - cstor-pool-delete-list-deploy-0.6.0
+    - cstor-pool-delete-delete-deploy-0.6.0
