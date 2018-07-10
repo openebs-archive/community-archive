@@ -77,9 +77,11 @@ data:
       labels:
         openebs.io/pv: {{ .Volume.owner }}
     spec:
-      cStorControllerIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
-      volumeName: {{ .Volume.owner }}
+      targetIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
       capacity: {{ .Volume.capacity }}
+      iqn: iqn.2016-09.com.openebs.cstor:{{ .Volume.owner }}
+      targetPortal: {{ .TaskResult.cvolcreateputsvc.clusterIP }}:3260
+      targetPort: 3260
       status: ""
 ---
 apiVersion: v1
@@ -212,14 +214,13 @@ data:
       name: {{ .Volume.owner }}-{{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
       labels:
         cstorpool.openebs.io/name: {{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
-        cstorpool.openebs.io/uid: {{ .ListItems.currentRepeatResource }}
         cstorvolume.openebs.io/uid: {{ .TaskResult.cvolcreateputvolume.cstorid }}
         cstorvolumereplica.openebs.io/pvc-name: {{ .Volume.pvc }}
         openebs.io/pv: {{ .Volume.owner }}
         #  finalizers: ["cstorvolumereplica.openebs.io/finalizer"]
     spec:
       capacity: {{ .Volume.capacity }}
-      cStorControllerIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
+      targetIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
     status:
       phase: ""
   post: |
