@@ -1,0 +1,12 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: read-cas-tpl
+spec:
+  taskNamespace: default
+  run:
+    tasks:
+    - cstor-volume-read-list-controller-service-0.7.0
+    - cstor-volume-read-list-replica-0.7.0
+    - cstor-volume-read-list-controller-pods-0.7.0
+  output: volume-read-output-0.7.0
