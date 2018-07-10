@@ -21,7 +21,7 @@ data:
       labelSelector: openebs.io/controller-service=jiva-controller-svc
   post: |
     {{- $servicePairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},clusterIP={@.spec.clusterIP};{end}` | trim | default "" | splitList ";" -}}
-    {{- $servicePairs | asKeyMap "volumeList" .ListItems | noop -}}
+    {{- $servicePairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -45,7 +45,7 @@ data:
       labelSelector: openebs.io/controller=jiva-controller
   post: |
     {{- $controllerPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},controllerIP={@.status.podIP},controllerStatus={@.status.containerStatuses[*].ready};{end}` | trim | default "" | splitList ";" -}}
-    {{- $controllerPairs | asKeyMap "volumeList" .ListItems | noop -}}
+    {{- $controllerPairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -69,7 +69,7 @@ data:
       labelSelector: openebs.io/replica=jiva-replica
   post: |
     {{- $replicaPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},replicaIP={@.status.podIP},replicaStatus={@.status.containerStatuses[*].ready},capacity={@.metadata.labels.openebs\.io/capacity};{end}` | trim | default "" | splitList ";" -}}
-    {{- $replicaPairs | asKeyMap "volumeList" .ListItems | noop -}}
+    {{- $replicaPairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -254,7 +254,6 @@ metadata:
 data:
   meta: |
     id: creategetpath
-    runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     objectName: {{ .Config.StoragePool.value }}
