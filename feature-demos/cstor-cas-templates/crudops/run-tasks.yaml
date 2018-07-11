@@ -1,3 +1,4 @@
+# runTask to list cstor pools
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,11 +14,15 @@ data:
     options: |-
       labelSelector: spc.openebs.io/name={{ .Config.spc.value }}
   post: |
+    # Check if enough online pools are present to create replicas.
+    # If pools are not present error out.
+    # Save the cstorpool's uid:name into .ListItems.cvolPoolList otherwise
     {{- $replicaCount := int64 .Config.ReplicaCount.value }}
     {{- $poolsList := jsonpath .JsonResult `{range .items[?(@.status.phase=="online")]}pkey=pools {@.metadata.uid}={@.metadata.name};{end}` | trim | default "" | splitList ";" -}}
     {{- len $poolsList | gt $replicaCount | verifyErr "not enough pools available to create replicas" | saveAs "cvolcreatelistpool.verifyErr" .TaskResult | noop -}}
     {{- $poolsList | asKeyMap "cvolPoolList" .ListItems | noop -}}
 ---
+# runTask to create cStor controller service
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -31,6 +36,7 @@ data:
     id: cvolcreateputsvc
     runNamespace: {{ .Volume.runNamespace }}
   post: |
+    # Save the created service name and clusterIP
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "cvolcreateputsvc.objectName" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{.spec.clusterIP}` | trim | saveAs "cvolcreateputsvc.clusterIP" .TaskResult | noop -}}
   task: |
@@ -54,6 +60,7 @@ data:
         openebs.io/controller: cstor-controller
         openebs.io/pv: {{ .Volume.owner }}
 ---
+# runTask to create cStorVolume
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -67,6 +74,7 @@ data:
     runNamespace: {{ .Volume.runNamespace }}
     action: put
   post: |
+    # Save the id of created object and its name.
     {{- jsonpath .JsonResult `{.metadata.uid}` | trim | saveAs "cvolcreateputvolume.cstorid" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "cvolcreateputvolume.objectName" .TaskResult | noop -}}
   task: |
@@ -84,6 +92,7 @@ data:
       targetPort: 3260
       status: ""
 ---
+# runTask to create cStor controller deployment
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -97,8 +106,11 @@ data:
     action: put
     id: cvolcreateputctrl
   post: |
+    # Save the name of controller deployment
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "cvolcreateputctrl.objectName" .TaskResult | noop -}}
   task: |
+    # Check if monitoring is enabled. Default value is true.
+    # If true then add monitoring container and annotations
     {{- $isMonitor := .Config.VolumeMonitor.enabled | default "true" | lower -}}
     apiVersion: apps/v1beta1
     Kind: Deployment
@@ -168,6 +180,7 @@ data:
             - containerPort: 80
             env:
             - name: CSTOR_ID
+              # We use the id of succeeding cstor volume.
               value: {{ .TaskResult.cvolcreateputvolume.cstorid }}
             securityContext:
               privileged: true
@@ -186,6 +199,7 @@ data:
           - name: dummyfile
             emptyDir: {}
 ---
+# runTask to create cStorVolumeReplica/(s)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -198,11 +212,15 @@ data:
     kind: CStorVolumeReplica
     action: put
     id: cstorvolumecreatereplica
+    # Fetch all the cStorPool uids into a list
     {{- $poolUids := keys .ListItems.cvolPoolList.pools }}
+    # Calculate the replica count
     {{- $replicaCount := int64 .Config.ReplicaCount.value }}
+    # Add as many poolUid to resources as there is replica count.
     repeatWith:
       resources:
       {{- range $k, $v := $poolUids }}
+      # Check if replicaCount limit has been reached. Ignore if reached.
       {{- if lt $k $replicaCount }}
       - {{ $v }}
       {{- end }}
@@ -211,6 +229,10 @@ data:
     kind: CStorVolumeReplica
     apiVersion: openebs.io/v1alpha1
     metadata:
+      # We pluck the cStorPool name from the map[uid]name:
+      # { "uid1":"name1","uid2":"name2","uid2":"name2" }
+      # The .ListItems.currentRepeatResource gives us the uid of one
+      # of the pools from resources list
       name: {{ .Volume.owner }}-{{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
       labels:
         cstorpool.openebs.io/name: {{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
@@ -222,11 +244,17 @@ data:
       capacity: {{ .Volume.capacity }}
       targetIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
     status:
+      # phase would be update by appropriate controller
       phase: ""
   post: |
+    # Save the create replica name and capacity
     {{- jsonpath .JsonResult `{metadata.name}` | trim | saveAs "cstorvolumecreatereplica.objectName" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{metadata.spec.capacity}` | trim | saveAs "cstorvolumecreatereplica.capacity" .TaskResult | noop -}}
+    # Save a key map value of replica name to capacity. This needs improvement
+    {{- $replicaPair := jsonpath .JsonResult `pkey=replicas {@.metadata.name}={@.spec.capacity};` | trim | default "" | splitList ";" -}}
+    {{- $replicaPair | asKeyMap "replicaList" .ListItems | noop -}}
 ---
+# runTask to render volume create output as CASVolume
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -245,11 +273,13 @@ data:
       name: {{ .Volume.owner }}
       annotations:
         vsm.openebs.io/iqn: iqn.2016-09.com.openebs.cstor:{{ .Volume.owner }}
-        vsm.openebs.io/replica-count: {{ .TaskResult.cstorvolumecreatereplica.objectName | default "" | splitList " " | len }}
+        vsm.openebs.io/replica-count: {{ .TaskResult.cstorvolumecreatereplica.replicaList.replicas | len }}
         vsm.openebs.io/volume-size: {{ .Volume.capacity }}
         vsm.openebs.io/targetportals: {{ .TaskResult.cvolcreateputsvc.clusterIP }}:3260
+    # Select the capacity of first replica
     capacity: {{ .TaskResult.cstorvolumecreatereplica.capacity }}
 ---
+# runTask to list all cstor controller deployment services
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -257,8 +287,10 @@ metadata:
   namespace: default
 data:
   meta: |
+    # Create and save list of namespaces to $nss
     {{- $nss := .Volume.runNamespace | default "" | splitList ", " -}}
     id: listlistsvc
+    # Iterate over each namespace and perform list task
     repeatWith:
       kind: namespace
       resources:
@@ -271,9 +303,13 @@ data:
     options: |-
       labelSelector: openebs.io/controller-service=cstor-controller-svc
   post: |
+    # We create a pair of "clusterIP"=xxxxx and save it for corresponding volume
+    # The per volume is servicePair is identified by unique "namespace/vol-name" key
     {{- $servicePairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} clusterIP={@.spec.clusterIP};{end}` | trim | default "" | splitList ";" -}}
+    # Save the volume information to a map "volumeList"
     {{- $servicePairs | asKeyMap "volumeList" .ListItems | noop -}}
 ---
+# runTask to list all cstor controller pods
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -295,7 +331,10 @@ data:
     options: |-
       labelSelector: openebs.io/controller=cstor-controller
   post: |
+    # We create a pair of "controllerIP"=xxxxx and save it for corresponding volume
+    # The per volume is servicePair is identified by unique "namespace/vol-name" key
     {{- $controllerPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} controllerIP={@.status.podIP} controllerStatus={@.status.containerStatuses[*].ready};{end}` | trim | default "" | splitList ";" -}}
+    # Save the volume information to a map "volumeList"
     {{- $controllerPairs | asKeyMap "volumeList" .ListItems | noop -}}
 ---
 apiVersion: v1
@@ -320,6 +359,7 @@ data:
     {{- $replicaPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv} replicaName={@.metadata.name} capacity={@.spec.capacity};{end}` | trim | default "" | splitList ";" -}}
     {{- $replicaPairs | asKeyMap "volumeList" .ListItems | noop -}}
 ---
+# runTask to render volume list output
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -334,6 +374,8 @@ data:
   task: |
     kind: CASVolumeList
     items:
+    # We have a unique key for each volume in .ListItems.volumeList
+    # We iterate over it to extract various volume properties.
     {{- range $pkey, $map := .ListItems.volumeList }}
     {{- $capacity := pluck "capacity" $map | first | default "" | splitList ", " | first }}
     {{- $clusterIP := pluck "clusterIP" $map | first }}
@@ -354,11 +396,13 @@ data:
             vsm.openebs.io/volume-size: {{ $capacity }}
             vsm.openebs.io/controller-status: {{ $controllerStatus | replace "true" "running" | replace "false" "notready" }}
             vsm.openebs.io/targetportals: {{ $clusterIP }}:3260
+    #we fill replica count by counting replica names
             vsm.openebs.io/replica-count: {{ $replicaName | default "" | splitList ", " | len }}
         spec:
           capacity: {{ $capacity }}
     {{- end -}}
 ---
+# runTask to list cStor controller deployment service
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -374,10 +418,14 @@ data:
     options: |-
       labelSelector: openebs.io/controller-service=cstor-controller-svc,openebs.io/pv={{ .Volume.owner }}
   post: |
+    # Save the name of the service
     {{- jsonpath .JsonResult `{.items[*].metadata.name}` | trim | saveAs "readlistsvc.items" .TaskResult | noop -}}
+    # Error if controller service is missing
     {{- .TaskResult.readlistsvc.items | notFoundErr "controller service not found" | saveIf "readlistsvc.notFoundErr" .TaskResult | noop -}}
+    # Save the clusterIP of the service
     {{- jsonpath .JsonResult `{.items[*].spec.clusterIP}` | trim | saveAs "readlistsvc.clusterIP" .TaskResult | noop -}}
 ---
+# runTask to list all replicas of a volume
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -393,10 +441,14 @@ data:
     options: |-
       labelSelector: openebs.io/pv={{ .Volume.owner }}
   post: |
+    # Save the name of the replica
     {{- jsonpath .JsonResult `{.items[*].metadata.name}` | trim | saveAs "readlistrep.items" .TaskResult | noop -}}
+    # Error if replicas are missing
     {{- .TaskResult.readlistrep.items | notFoundErr "replicas not found" | saveIf "readlistrep.notFoundErr" .TaskResult | noop -}}
+    # Save the capacity of replicas
     {{- jsonpath .JsonResult `{.items[*].spec.capacity}` | trim | saveAs "readlistrep.capacity" .TaskResult | noop -}}
 ---
+# runTask to list cStor volume controller pods
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -412,11 +464,13 @@ data:
     options: |-
       labelSelector: openebs.io/controller=cstor-controller,openebs.io/pv={{ .Volume.owner }}
   post: |
+    # Save the name, ip, status of the pod. Error if pods are missing
     {{- jsonpath .JsonResult `{.items[*].metadata.name}` | trim | saveAs "readlistctrl.items" .TaskResult | noop -}}
     {{- .TaskResult.readlistctrl.items | notFoundErr "controller pod not found" | saveIf "readlistctrl.notFoundErr" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{.items[*].status.podIP}` | trim | saveAs "readlistctrl.podIP" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{.items[*].status.containerStatuses[*].ready}` | trim | saveAs "readlistctrl.status" .TaskResult | noop -}}
 ---
+# runTask to render output of read volume task as CAS Volume
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -445,6 +499,7 @@ data:
     spec:
       capacity: {{ $capacity }}
 ---
+# runTask to list the cstorvolume that has to be deleted
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -460,10 +515,12 @@ data:
     options: |-
       labelSelector: openebs.io/pv={{ .Volume.owner }}
   post: |
+    # Save the names check if count is 1. Error out if object is missing or count varies
     {{- jsonpath .JsonResult `{.items[*].metadata.name}` | trim | saveAs "deletelistcsv.names" .TaskResult | noop -}}
     {{- .TaskResult.deletelistcsv.names | notFoundErr "cstor volume not found" | saveIf "deletelistcsv.notFoundErr" .TaskResult | noop -}}
     {{- .TaskResult.deletelistcsv.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. cstor volume is not 1" | saveIf "deletelistcsv.verifyErr" .TaskResult | noop -}}
 ---
+# runTask to list controller service of volume to delete
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -483,6 +540,7 @@ data:
     {{- .TaskResult.deletelistsvc.names | notFoundErr "controller service not found" | saveIf "deletelistsvc.notFoundErr" .TaskResult | noop -}}
     {{- .TaskResult.deletelistsvc.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. of controller services is not 1" | saveIf "deletelistsvc.verifyErr" .TaskResult | noop -}}
 ---
+# runTask to list controller deployment of volume to delete
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -502,6 +560,7 @@ data:
     {{- .TaskResult.deletelistctrl.names | notFoundErr "controller deployment not found" | saveIf "deletelistctrl.notFoundErr" .TaskResult | noop -}}
     {{- .TaskResult.deletelistctrl.names | default "" | splitList " " | isLen 1 | not | verifyErr "total no. of controller deployments is not 1" | saveIf "deletelistctrl.verifyErr" .TaskResult | noop -}}
 ---
+# runTask to list cstorvolumereplica of volume to delete
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -521,6 +580,7 @@ data:
     {{- $cvrs | notFoundErr "cstor volume replica not found" | saveIf "deletelistcvr.notFoundErr" .TaskResult | noop -}}
     {{- $cvrs | asKeyMap "cvrlist" .ListItems | noop -}}
 ---
+# runTask to delete cStor volume controller service
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -535,6 +595,7 @@ data:
     action: delete
     objectName: {{ .TaskResult.deletelistsvc.names }}
 ---
+# runTask to delete cStor volume controller deployment
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -549,6 +610,7 @@ data:
     action: delete
     objectName: {{ .TaskResult.deletelistctrl.names }}
 ---
+# runTask to delete cstorvolumereplica
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -563,6 +625,7 @@ data:
     objectName: {{ keys .ListItems.cvrlist.cvrs | join "," }}
     apiVersion: openebs.io/v1alpha1
 ---
+# runTask to delete cstorvolume
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -577,6 +640,8 @@ data:
     kind: CStorVolume
     objectName: {{ pluck "names" .TaskResult.deletelistcsv | first }}
 ---
+# runTask to render output of deleted volume.
+# This task only returns the name of volume that is deleted
 apiVersion: v1
 kind: ConfigMap
 metadata:
