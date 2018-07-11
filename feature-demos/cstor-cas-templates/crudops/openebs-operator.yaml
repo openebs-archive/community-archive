@@ -12,7 +12,9 @@ metadata:
   name: openebs-standard
   annotations:
     cas.openebs.io/create-template: cast-standard-0.7.0
-    spc.openebs.io/name: "123"
+    cas.openebs.io/config: |
+      - name: spc
+        value: "123"
 provisioner: openebs.io/provisioner-iscsi
 ---
 apiVersion: v1
