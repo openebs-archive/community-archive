@@ -170,12 +170,14 @@ data:
           - image: {{ .Config.VolumeExporterImage.value }}
             name: maya-volume-exporter
             args:
-            - -c=http://127.0.0.1:9501
-            command:
-            - maya-volume-exporter
+            - "-e=cstor"
+            command: ["maya-exporter"]
             ports:
             - containerPort: 9500
               protocol: TCP
+            volumeMounts:
+            - name: sockfile
+              mountPath: /configs
           {{- end}}
           - name: cstor-volume-mgmt
             image: {{ .Config.VolumeControllerImage.value }}
@@ -183,7 +185,7 @@ data:
             ports:
             - containerPort: 80
             env:
-            - name: CSTOR_ID
+            - name: OPENEBS_IO_CSTOR_VOLUME_ID
               {{/* We use the id of succeeding cstor volume */}}
               value: {{ .TaskResult.cvolcreateputvolume.cstorid }}
             securityContext:
