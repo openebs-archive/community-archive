@@ -11,9 +11,9 @@ kind: StorageClass
 metadata:
   name: openebs-standard
   annotations:
-    cas.openebs.io/create-template: cast-standard-0.7.0
+    cas.openebs.io/create-volume-template: cast-standard-cstor-create-0.7.0
     cas.openebs.io/config: |
-      - name: spc
+      - name: StoragePoolClaim
         value: "123"
 provisioner: openebs.io/provisioner-iscsi
 ---
@@ -174,7 +174,7 @@ spec:
       serviceAccountName: openebs-maya-operator
       containers:
       - name: openebs-maya-apiserver
-        image: "rachitprince/m-apiserver:cstor-cas-demo"
+        image: "rachitprince/m-apiserver:rebase"
         ports:
         - containerPort: 5656
         env:

@@ -1,7 +1,7 @@
 apiVersion: openebs.io/v1alpha1
 kind: CASTemplate
 metadata:
-  name: cast-standard-0.7.0
+  name: cast-standard-cstor-create-0.7.0
 spec:
   defaultConfig:
   - name: VolumeControllerImage
