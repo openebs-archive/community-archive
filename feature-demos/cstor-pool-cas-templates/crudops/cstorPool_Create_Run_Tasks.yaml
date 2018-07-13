@@ -13,7 +13,7 @@ data:
     action: get
     retry: "10,30s"
   post: |
-    {{- jsonpath .JsonResult "{.spec.disks.diskList}" | trim | trimAll "[" | trimAll "]"| replace " " "," | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
