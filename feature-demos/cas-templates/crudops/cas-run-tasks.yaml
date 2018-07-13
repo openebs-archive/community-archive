@@ -1,3 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-rollback-repeat-put-service
+  namespace: default
+data:
+  meta: |
+    id: TestRBRepeatPutSvc
+    runNamespace: default
+    apiVersion: v1
+    kind: Service
+    action: put
+    repeatWith:
+      resources:
+      - svc-001
+      - svc-003
+      - svc-002
+  post: |
+    {{- jsonpath .JsonResult "{.metadata.name}" | trim | addTo "TestRBRepeatPutSvc.objectName" .TaskResult | noop -}}
+  task: |
+    apiVersion: v1
+    Kind: Service
+    metadata:
+      labels:
+        app: frontend-service
+      name: {{ .ListItems.currentRepeatResource }}
+    spec:
+      ports:
+      - name: iscsi
+        port: 3260
+        protocol: TCP
+        targetPort: 3260
+      - name: api
+        port: 9501
+        protocol: TCP
+        targetPort: 9501
+      selector:
+        web: app-{{ .ListItems.currentRepeatResource }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-rollback-repeat-get-service
+  namespace: default
+data:
+  meta: |
+    id: TestRBRepeatGetSvc
+    runNamespace: default
+    repeatWith:
+      kind: name
+      resources:
+      - svc-003
+      - svc-002
+      - svc-001
+    apiVersion: v1
+    kind: Service
+    action: get
+  post: |
+    {{- jsonpath .JsonResult "{.spec.clusterIP}" | trim | addTo "TestRBRepeatGetSvc.allIPs" .ListItems | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-repeat-get-pvc
+  namespace: default
+data:
+  meta: |
+    id: TestRepeatGetPVC
+    runNamespace: default
+    repeatWith:
+      kind: name
+      resources:
+      - pvc-003
+      - pvc-002
+      - pvc-001
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    action: get
+  post: |
+    {{- jsonpath .JsonResult "{.spec.storageClassName}" | trim | addTo "TestRepeatGetPVC.allSCs" .ListItems | noop -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-output-repeat-get-pvc
+  namespace: default
+data:
+  meta: |
+    id : TestRepeatOutputPvc
+    action: output
+    kind: CASVolume
+    apiVersion: v1alpha1
+  task: |
+    kind: CASVolume
+    apiVersion: v1alpha1
+    metadata:
+      name: TestRepeatPutNGet
+      annotations:
+        storageClasses: {{ .ListItems.TestRepeatGetPVC.allSCs }}
+    spec:
+      capacity: 20G
 ---
 apiVersion: v1
 kind: ConfigMap

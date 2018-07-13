@@ -1,0 +1,16 @@
+kind: CASVolume
+apiVersion: v1alpha1
+metadata:
+  name: test-repeat-get
+  # this namespace has got more priority
+  namespace: default
+  labels:
+    # deprecated way to set capacity
+    volumeprovisioner.mapi.openebs.io/storage-size: 2G
+    openebs.io/storage-class: test-repeat-get
+    # this namespace is used if metadata.namespace is empty
+    openebs.io/namespace: default
+    openebs.io/pvc: casvolume-claim
+spec:
+  # latest way to set capacity
+  capacity: 2G

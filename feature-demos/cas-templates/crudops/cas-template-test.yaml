@@ -1,0 +1,21 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: test-rollback-repeat-put
+spec:
+  taskNamespace: default
+  run:
+    tasks:
+    - test-rollback-repeat-put-service
+    - test-rollback-repeat-get-service
+---
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: test-repeat-get
+spec:
+  taskNamespace: default
+  run:
+    tasks:
+    - test-repeat-get-pvc
+  output: test-output-repeat-get-pvc

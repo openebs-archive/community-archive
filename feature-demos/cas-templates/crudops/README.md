@@ -106,3 +106,12 @@
   - `kubectl get svc`
   - `kubectl get pvc`
   - `kubectl get pv`
+
+## Debug/Verify
+- curl -k -H "Content-Type: application/yaml" \
+  -X POST -d"$(cat cas-volume-test-repeat-get.yaml)" \
+  http://"$(kubectl get svc maya-apiserver-service --template={{.spec.clusterIP}})":5656/latest/volumes/
+
+- curl -k -H "Content-Type: application/yaml" \
+  -X POST -d"$(cat cas-volume-test-rollback-repeat-put.yaml)" \
+  http://"$(kubectl get svc maya-apiserver-service --template={{.spec.clusterIP}})":5656/latest/volumes/

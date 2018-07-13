@@ -1,12 +1,36 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: casvolume-claim
+  name: pvc-001
   namespace: default
-  annotations:
-    controller.openebs.io/affinity: pinit
-    controller.openebs.io/affinity-topology: kubernetes.io/hostname
-    controller.openebs.io/affinity-type: soft
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-standard
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-002
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-standard
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-003
+  namespace: default
 spec:
   accessModes:
     - ReadWriteOnce

@@ -14,6 +14,24 @@ metadata:
     cas.openebs.io/create-volume-template: cast-standard-0.6.0
 provisioner: openebs.io/provisioner-iscsi
 ---
+# StorageClass supported by OpenEBS
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: test-repeat-get
+  annotations:
+    cas.openebs.io/create-volume-template: test-repeat-get
+provisioner: openebs.io/provisioner-iscsi
+---
+# StorageClass supported by OpenEBS
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: test-rollback-repeat-put
+  annotations:
+    cas.openebs.io/create-volume-template: test-rollback-repeat-put
+provisioner: openebs.io/provisioner-iscsi
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -173,7 +191,8 @@ spec:
       - name: openebs-maya-apiserver
         #image: "openebs/m-apiserver:castemplate"
         #image: "openebs/m-apiserver:castemplate3"
-        image: "openebs/m-apiserver:castemplate4"
+        #image: "openebs/m-apiserver:castemplate4"
+        image: "openebs/m-apiserver:castemplate5"
         imagePullPolicy: Always
         ports:
         - containerPort: 5656
