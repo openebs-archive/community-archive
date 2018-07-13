@@ -168,8 +168,27 @@ data:
             hostPath:
               # From host, dir called /var/openebs/shared-<uid> is created to avoid clash if two replicas run on same node.
               path: /var/openebs/shared-a2b
-              type: Directory
+              type: {{ .Config.hostPathType.value }}
           - name: udev
             hostPath:
               path: /run/udev
               type: Directory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-create-patch-spc-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: createpatchspc
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePoolClaim
+    objectName: {{.CstorPool.owner}}
+    action: patch
+  task: |
+    type: merge
+    pspec: |-
+      status:
+        phase: online

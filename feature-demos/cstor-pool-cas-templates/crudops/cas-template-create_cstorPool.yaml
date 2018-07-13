@@ -8,6 +8,8 @@ spec:
     value: gkganeshr/cstor-pool:v1.1
   - name: CstorPoolMgmtImage
     value: gkganeshr/cstor-pool-mgmt:v2.6
+  - name: hostPathType
+    value: DirectoryOrCreate
   taskNamespace: default
   run:
     tasks:
@@ -15,3 +17,4 @@ spec:
     - cstor-pool-create-list-node-0.6.0
     - cstor-pool-create-put-cr-0.6.0
     - cstor-pool-create-put-deployment-0.6.0
+    - cstor-pool-create-patch-spc-0.6.0
