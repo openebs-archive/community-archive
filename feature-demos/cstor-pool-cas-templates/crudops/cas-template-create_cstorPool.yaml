@@ -3,19 +3,25 @@ kind: CASTemplate
 metadata:
   name: cast-standard-cstorpool-0.6.0
 spec:
+  # A list of deafult configs can be entered here to utilise it in run tasks.
   defaultConfig:
+  # cstorpool is the container which runs zpool replication controller and communicates with iscsi target.
   - name: CstorPoolImage
     value: gkganeshr/cstor-pool:v1.1
+  # cstor-pool-mgmt is the container which watches for cstorpool and cstorvolumereplica CRs and runs the pool and volumereplica related operations like create, delete, import, etc.
   - name: CstorPoolMgmtImage
     value: gkganeshr/cstor-pool-mgmt:v2.6
+  # A hostPath volume mounts a file or directory from the host node’s filesystem into your Pod.
+  # 'DirectoryOrCreate' value  ensures nothing exists at the given path, an empty directory will be created
   - name: hostPathType
     value: DirectoryOrCreate
   taskNamespace: default
   run:
     tasks:
+    # Following are the list of run tasks that are executed in order to create a storage pool
     - cstor-pool-create-list-disk-0.6.0
     - cstor-pool-create-list-node-0.6.0
     - cstor-pool-create-put-cr-0.6.0
     - cstor-pool-create-put-deployment-0.6.0
-    - cstor-pool-create-patch-spc-0.6.0
     - cstor-pool-create-put-storagepool-0.6.0
+    - cstor-pool-create-patch-spc-0.6.0

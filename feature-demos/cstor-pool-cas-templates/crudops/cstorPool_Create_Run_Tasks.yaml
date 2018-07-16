@@ -1,3 +1,4 @@
+# This run task fetches the list of disk from storagepoolclaim object
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -15,6 +16,7 @@ data:
   post: |
     {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
 ---
+# This run task makes a map of node to associated disks. 
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -34,6 +36,7 @@ data:
     {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes {@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};{end}` | trim | default "" | splitList ";" -}}
     {{- $nodesList | asKeyMap "cstorNodePoolList" .ListItems | noop -}}
 ---
+# This run task create a cstor pool CR
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -73,6 +76,7 @@ data:
     status:
       phase: {{ .CstorPool.phase }}
 ---
+# This run task create a cstor pool deployment
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -174,25 +178,7 @@ data:
               path: /run/udev
               type: Directory
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cstor-pool-create-patch-spc-0.6.0
-  namespace: default
-data:
-  meta: |
-    id: createpatchspc
-    runNamespace: {{ .Volume.runNamespace }}
-    apiVersion: openebs.io/v1alpha1
-    kind: StoragePoolClaim
-    objectName: {{.CstorPool.owner}}
-    action: patch
-  task: |
-    type: merge
-    pspec: |-
-      status:
-        phase: online
----
+# This run task creates a storage pool CR
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -225,3 +211,23 @@ data:
         poolType: {{.CstorPool.poolType}}
         cacheFile: /tmp/{{.CstorPool.spc}}.cache
         overProvisioning: false
+---
+# This run task patches storagepoolclaim object to mark successful creation of pool
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-create-patch-spc-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: createpatchspc
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePoolClaim
+    objectName: {{.CstorPool.owner}}
+    action: patch
+  task: |
+    type: merge
+    pspec: |-
+      status:
+        phase: online

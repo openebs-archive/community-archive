@@ -1,3 +1,4 @@
+# This run task lists all cstor pool CRs that need to be deleted
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,6 +19,7 @@ data:
     {{- $csps | notFoundErr "cstor pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
     {{- $csps | asKeyMap "csplist" .ListItems | noop -}}
 ---
+# This run task delete all the required cstor pool CR
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -32,6 +34,7 @@ data:
     id: deletecstorpoolcr
     objectName: {{ keys .ListItems.csplist.csps | join "," }}
 ---
+# This run task lists all the required cstor pool deployments that need to be deleted
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -52,6 +55,7 @@ data:
     {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}
     {{- $csds | asKeyMap "csdlist" .ListItems | noop -}}
 ---
+# This run task deletes all the required cstor pool deployments
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -66,6 +70,7 @@ data:
     action: delete
     objectName: {{ keys .ListItems.csdlist.csds | join "," }}
 ---
+# This run task deletes the required storage pool claim object
 apiVersion: v1
 kind: ConfigMap
 metadata:

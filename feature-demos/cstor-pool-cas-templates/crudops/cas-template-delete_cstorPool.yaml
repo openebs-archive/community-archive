@@ -3,12 +3,10 @@ kind: CASTemplate
 metadata:
   name: cstor-pool-delete-cast
 spec:
-  defaultConfig:
-  - name: CstorPoolMgmtImage
-    value: gkganeshr/cstor-pool-mgmt:v2.3
   taskNamespace: default
   run:
     tasks:
+    # Following are run tasks that are executed in order to delete a storage pool
     - cstor-pool-delete-listcsp-0.6.0
     - cstor-pool-delete-delete-csp-0.6.0
     - cstor-pool-delete-list-deploy-0.6.0
