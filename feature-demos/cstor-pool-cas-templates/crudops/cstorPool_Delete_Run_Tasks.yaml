@@ -12,7 +12,6 @@ data:
     action: list
     options: |-
       labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
-    retry: "10,30s"
   post: |
     {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csps | notFoundErr "cstor pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
@@ -47,7 +46,6 @@ data:
     action: list
     options: |-
       labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
-    retry: "10,30s"
   post: |
     {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}

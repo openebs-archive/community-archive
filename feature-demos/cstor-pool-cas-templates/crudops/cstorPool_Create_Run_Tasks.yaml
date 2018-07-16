@@ -10,7 +10,6 @@ data:
     kind: StoragePoolClaim
     objectName: {{.CstorPool.spc}}
     action: get
-    retry: "10,30s"
   post: |
     {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
 ---
