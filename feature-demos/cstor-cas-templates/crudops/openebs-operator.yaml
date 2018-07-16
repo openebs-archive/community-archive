@@ -109,7 +109,7 @@ rules:
   resources: ["nodes","nodes/proxy"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["*"]
-  resources: ["namespaces", "services", "pods", "deployments", "events", "endpoints", "configmaps"]
+  resources: ["namespaces", "services", "pods", "deployments", "events", "endpoints", "configmaps","cstorpool","cstorvolume","cstorvolumereplica"]
   verbs: ["*"]
 - apiGroups: ["*"]
   resources: ["persistentvolumes","persistentvolumeclaims"]
