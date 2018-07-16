@@ -1,4 +1,3 @@
-# This run task fetches the list of disk from storagepoolclaim object
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,7 +6,6 @@ metadata:
 data:
   meta: |
     id: cstorpoollistdisk
-    runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: StoragePoolClaim
     objectName: {{.CstorPool.spc}}
@@ -16,7 +14,6 @@ data:
   post: |
     {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
 ---
-# This run task makes a map of node to associated disks. 
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,7 +22,6 @@ metadata:
 data:
   meta: |
     id: cstorpoollistnode
-    runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: Disk
     action: list
@@ -33,10 +29,9 @@ data:
       labelSelector: diskName in ({{.TaskResult.cstorpoollistdisk.disk}})
     retry: "10,30s"
   post: |
-    {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes {@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};{end}` | trim | default "" | splitList ";" -}}
-    {{- $nodesList | asKeyMap "cstorNodePoolList" .ListItems | noop -}}
+    {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes,{@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};{end}` | trim | default "" | splitList ";" -}}
+    {{- $nodesList | keyMap "cstorNodePoolList" .ListItems | noop -}}
 ---
-# This run task create a cstor pool CR
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -44,7 +39,6 @@ metadata:
   namespace: default
 data:
   meta: |
-    runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: CStorPool
     action: put
@@ -56,8 +50,8 @@ data:
         {{- end }}
   post: |
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "createputcstorpool.objectName" .TaskResult | noop -}}
-    {{- $nodeUidMap := jsonpath .JsonResult `pkey=nodesUid {.metadata.labels.kubernetes\.io/hostname}={.metadata.uid};` | trim | default "" | splitList ";" -}}
-    {{- $nodeUidMap | asKeyMap "cstorNodeUidList" .ListItems | noop -}}
+    {{- $nodeUidMap := jsonpath .JsonResult `pkey=nodesUid,{.metadata.labels.kubernetes\.io/hostname}={.metadata.uid};` | trim | default "" | splitList ";" -}}
+    {{- $nodeUidMap | keyMap "cstorNodeUidList" .ListItems | noop -}}
   task: |
     apiVersion: openebs.io/v1alpha1
     kind: CStorPool
@@ -76,7 +70,6 @@ data:
     status:
       phase: {{ .CstorPool.phase }}
 ---
-# This run task create a cstor pool deployment
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -178,7 +171,24 @@ data:
               path: /run/udev
               type: Directory
 ---
-# This run task creates a storage pool CR
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-create-patch-spc-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: createpatchspc
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePoolClaim
+    objectName: {{.CstorPool.owner}}
+    action: patch
+  task: |
+    type: merge
+    pspec: |-
+      status:
+        phase: online
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -186,7 +196,6 @@ metadata:
   namespace: default
 data:
   meta: |
-    runNamespace: {{ .Volume.runNamespace }}
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     action: put
@@ -211,23 +220,3 @@ data:
         poolType: {{.CstorPool.poolType}}
         cacheFile: /tmp/{{.CstorPool.spc}}.cache
         overProvisioning: false
----
-# This run task patches storagepoolclaim object to mark successful creation of pool
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: cstor-pool-create-patch-spc-0.6.0
-  namespace: default
-data:
-  meta: |
-    id: createpatchspc
-    runNamespace: {{ .Volume.runNamespace }}
-    apiVersion: openebs.io/v1alpha1
-    kind: StoragePoolClaim
-    objectName: {{.CstorPool.owner}}
-    action: patch
-  task: |
-    type: merge
-    pspec: |-
-      status:
-        phase: online

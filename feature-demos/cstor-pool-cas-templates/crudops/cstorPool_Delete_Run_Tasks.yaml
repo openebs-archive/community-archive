@@ -8,16 +8,15 @@ data:
   meta: |
     id: deletelistcsp
     apiVersion: openebs.io/v1alpha1
-    runNamespace: default
     kind: CStorPool
     action: list
     options: |-
       labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
     retry: "10,30s"
   post: |
-    {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps {@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csps | notFoundErr "cstor pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
-    {{- $csps | asKeyMap "csplist" .ListItems | noop -}}
+    {{- $csps | keyMap "csplist" .ListItems | noop -}}
 ---
 # This run task delete all the required cstor pool CR
 apiVersion: v1
@@ -28,7 +27,6 @@ metadata:
 data:
   meta: |
     apiVersion: openebs.io/v1alpha1
-    runNamespace: default
     kind: CStorPool
     action: delete
     id: deletecstorpoolcr
@@ -51,9 +49,9 @@ data:
       labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
     retry: "10,30s"
   post: |
-    {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds {@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}
-    {{- $csds | asKeyMap "csdlist" .ListItems | noop -}}
+    {{- $csds | keyMap "csdlist" .ListItems | noop -}}
 ---
 # This run task deletes all the required cstor pool deployments
 apiVersion: v1
@@ -79,7 +77,6 @@ metadata:
 data:
   meta: |
     id: cstorpooldeletestoragepool
-    runNamespace: default
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     action: delete
