@@ -24,12 +24,16 @@ data:
     id: cstorpoollistnode
     apiVersion: openebs.io/v1alpha1
     kind: Disk
-    action: list
-    options: |-
-      labelSelector: diskName in ({{.TaskResult.cstorpoollistdisk.disk}})
-    retry: "10,30s"
+    action: get
+    repeatWith:
+      kind: name
+      resources:
+        {{- $diskList := .TaskResult.cstorpoollistdisk.disk | replace "," " "| trim | split " "}}
+        {{ range $k,$v := $diskList }}
+        - {{$v}}
+        {{ end }}
   post: |
-    {{- $nodesList := jsonpath .JsonResult `{range .items[*]}pkey=nodes,{@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};{end}` | trim | default "" | splitList ";" -}}
+    {{- $nodesList := jsonpath .JsonResult `pkey=nodes,{@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};` | trim | default "" | splitList ";" -}}
     {{- $nodesList | keyMap "cstorNodePoolList" .ListItems | noop -}}
 ---
 apiVersion: v1
@@ -85,7 +89,7 @@ data:
     repeatWith:
       resources:
       {{- range $k, $v := .ListItems.cstorNodeUidList.nodesUid }}
-      - {{ $k }} #retrieving only key
+      - {{ $k }}
       {{- end }}
   post: |
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "cstorpoolcreatedeploy.objectName" .TaskResult | noop -}}
