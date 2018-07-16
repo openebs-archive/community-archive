@@ -65,3 +65,17 @@ data:
     kind: Deployment
     action: delete
     objectName: {{ keys .ListItems.csdlist.csds | join "," }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-delete-delete-storagepool-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: cstorpooldeletestoragepool
+    runNamespace: default
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePool
+    action: delete
+    objectName: storage{{.CstorPool.owner}}

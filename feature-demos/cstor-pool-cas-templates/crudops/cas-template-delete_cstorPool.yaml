@@ -13,3 +13,4 @@ spec:
     - cstor-pool-delete-delete-csp-0.6.0
     - cstor-pool-delete-list-deploy-0.6.0
     - cstor-pool-delete-delete-deploy-0.6.0
+    - cstor-pool-delete-delete-storagepool-0.6.0

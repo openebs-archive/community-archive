@@ -18,3 +18,4 @@ spec:
     - cstor-pool-create-put-cr-0.6.0
     - cstor-pool-create-put-deployment-0.6.0
     - cstor-pool-create-patch-spc-0.6.0
+    - cstor-pool-create-put-storagepool-0.6.0

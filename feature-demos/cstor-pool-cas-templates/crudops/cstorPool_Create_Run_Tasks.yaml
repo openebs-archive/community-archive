@@ -192,3 +192,36 @@ data:
     pspec: |-
       status:
         phase: online
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-create-put-storagepool-0.6.0
+  namespace: default
+data:
+  meta: |
+    runNamespace: {{ .Volume.runNamespace }}
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePool
+    action: put
+    id: createputstoragepool
+  post: |
+    {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "createputstoragepool.objectName" .TaskResult | noop -}}
+  task: |
+    {{- $diskList := .TaskResult.cstorpoollistdisk.disk | replace "," " "| trim | split " " }}
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePool
+    metadata:
+      name: storage{{.CstorPool.owner}}
+      labels:
+        cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
+    spec:
+      disks:
+        diskList:
+         {{ range $k,$v := $diskList }}
+          - {{$v}}
+         {{ end }}
+      poolSpec:
+        poolType: {{.CstorPool.poolType}}
+        cacheFile: /tmp/{{.CstorPool.spc}}.cache
+        overProvisioning: false
