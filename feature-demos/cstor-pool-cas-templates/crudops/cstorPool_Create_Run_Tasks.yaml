@@ -59,7 +59,7 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: CStorPool
     metadata:
-      name: {{.CstorPool.owner}}-{{ .ListItems.currentRepeatResource}}
+      name: {{.CstorPool.owner}}-{{ .ListItems.currentRepeatResource | splitList "-" | last }}
       labels:
         cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
@@ -96,7 +96,7 @@ data:
     apiVersion: extensions/v1beta1
     kind: Deployment
     metadata:
-      name: cstor-pool-deploy-{{ .ListItems.currentRepeatResource}}
+      name: cstor-pool-deploy-{{ .ListItems.currentRepeatResource | splitList "-" | last }}
       labels:
         cas.openebs.io/storage-pool-claim: {{.CstorPool.owner}}
         app: cstor-pool
@@ -215,7 +215,7 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     metadata:
-      name: {{.CstorPool.owner}}-{{ .ListItems.currentRepeatResource}}
+      name: {{.CstorPool.owner}}-{{ .ListItems.currentRepeatResource | splitList "-" | last }}
       labels:
         cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
