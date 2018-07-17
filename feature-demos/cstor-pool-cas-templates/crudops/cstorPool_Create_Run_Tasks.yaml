@@ -203,6 +203,11 @@ data:
     kind: StoragePool
     action: put
     id: createputstoragepool
+    repeatWith:
+      resources:
+        {{- range $k, $v := .ListItems.cstorNodePoolList.nodes}}
+        - {{ $k }}
+        {{- end }}
   post: |
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "createputstoragepool.objectName" .TaskResult | noop -}}
   task: |
@@ -210,15 +215,13 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     metadata:
-      name: storage{{.CstorPool.owner}}
+      name: {{.CstorPool.owner}}-{{ .ListItems.currentRepeatResource}}
       labels:
         cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
+        kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
     spec:
       disks:
-        diskList:
-         {{ range $k,$v := $diskList }}
-          - {{$v}}
-         {{ end }}
+        diskList: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodePoolList.nodes }}
       poolSpec:
         poolType: {{.CstorPool.poolType}}
         cacheFile: /tmp/{{.CstorPool.spc}}.cache

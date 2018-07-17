@@ -66,6 +66,25 @@ data:
     action: delete
     objectName: {{ keys .ListItems.csdlist.csds | join "," }}
 ---
+# This run task lists all storage pool CRs that need to be deleted
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cstor-pool-delete-listsp-0.6.0
+  namespace: default
+data:
+  meta: |
+    id: deletelistsp
+    apiVersion: openebs.io/v1alpha1
+    kind: StoragePool
+    action: list
+    options: |-
+      labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
+  post: |
+    {{- $sps := jsonpath .JsonResult `{range .items[*]}pkey=sps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $sps | notFoundErr "storge pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
+    {{- $sps | keyMap "splist" .ListItems | noop -}}
+---
 # This run task deletes the required storage pool claim object
 apiVersion: v1
 kind: ConfigMap
@@ -78,4 +97,4 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     action: delete
-    objectName: storage{{.CstorPool.owner}}
+    objectName: {{ keys .ListItems.splist.sps | join "," }}
