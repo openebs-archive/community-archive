@@ -275,7 +275,13 @@ data:
         vsm.openebs.io/replica-count: {{ .ListItems.replicaList.replicas | len }}
         vsm.openebs.io/volume-size: {{ .Volume.capacity }}
         vsm.openebs.io/targetportals: {{ .TaskResult.cvolcreateputsvc.clusterIP }}:3260
-    capacity: {{ .TaskResult.cstorvolumecreatereplica.capacity }}
+    spec:
+      capacity: {{ .Volume.capacity }}
+      iqn: iqn.2016-09.com.openebs.cstor:{{ .Volume.owner }}
+      targetPortal: {{ .TaskResult.cvolcreateputsvc.clusterIP }}:3260
+      targetIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
+      targetPort: 3260
+      replicas: {{ .ListItems.replicaList.replicas | len }}
 ---
 # runTask to list all cstor controller deployment services
 apiVersion: v1
@@ -385,7 +391,6 @@ data:
     {{- range $pkey, $map := .ListItems.volumeList }}
     {{- $capacity := pluck "capacity" $map | first | default "" | splitList ", " | first }}
     {{- $clusterIP := pluck "clusterIP" $map | first }}
-    {{- $controllerIP := pluck "controllerIP" $map | first }}
     {{- $controllerStatus := pluck "controllerStatus" $map | first }}
     {{- $replicaName := pluck "replicaName" $map | first }}
     {{- $name := $pkey | splitList "/" | last }}
@@ -396,7 +401,6 @@ data:
           name: {{ $name }}
           namespace: {{ $ns }}
           annotations:
-            vsm.openebs.io/controller-ips: {{ $controllerIP }}
             vsm.openebs.io/cluster-ips: {{ $clusterIP }}
             vsm.openebs.io/iqn: iqn.2016-09.com.openebs.cstor:{{ $name }}
             vsm.openebs.io/volume-size: {{ $capacity }}
@@ -405,6 +409,11 @@ data:
             vsm.openebs.io/replica-count: {{ $replicaName | default "" | splitList ", " | len }}
         spec:
           capacity: {{ $capacity }}
+          iqn: iqn.2016-09.com.openebs.cstor:{{ $name }}
+          targetPortal: {{ $clusterIP }}:3260
+          targetIP: {{ $clusterIP }}
+          targetPort: 3260
+          replicas: {{ $replicaName | default "" | splitList ", " | len }}
     {{- end -}}
 ---
 # runTask to list cStor controller deployment service
@@ -498,6 +507,11 @@ data:
         vsm.openebs.io/targetportals: {{ .TaskResult.readlistsvc.clusterIP }}:3260
     spec:
       capacity: {{ $capacity }}
+      iqn: iqn.2016-09.com.openebs.cstor:{{ .Volume.owner }}
+      targetPortal: {{ .TaskResult.readlistsvc.clusterIP }}:3260
+      targetIP: {{ .TaskResult.readlistsvc.clusterIP }}
+      targetPort: 3260
+      replicas: {{ .TaskResult.readlistrep.capacity | default "" | splitList " " | len }}
 ---
 # runTask to list the cstorvolume that has to be deleted
 apiVersion: v1
