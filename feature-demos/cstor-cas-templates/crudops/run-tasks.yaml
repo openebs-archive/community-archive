@@ -78,6 +78,7 @@ data:
     {{- jsonpath .JsonResult `{.metadata.uid}` | trim | saveAs "cvolcreateputvolume.cstorid" .TaskResult | noop -}}
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | saveAs "cvolcreateputvolume.objectName" .TaskResult | noop -}}
   task: |
+    {{- $replicaCount := .Config.ReplicaCount.value | int64 -}}
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolume
     metadata:
@@ -91,6 +92,8 @@ data:
       targetPortal: {{ .TaskResult.cvolcreateputsvc.clusterIP }}:3260
       targetPort: 3260
       status: ""
+      replicationFactor: {{ $replicaCount }}
+      consistencyFactor: {{ div $replicaCount 2 | floor | add1 }}
 ---
 # runTask to create cStor controller deployment
 apiVersion: v1
@@ -119,6 +122,7 @@ data:
         openebs.io/controller: cstor-controller
         vsm: {{ .Volume.owner }}
         openebs.io/pv: {{ .Volume.owner }}
+        openebs.io/pvc: {{ .Volume.pvc }}
       annotations:
         {{- if eq $isMonitor "true" }}
         openebs.io/volume-monitor: "true"
