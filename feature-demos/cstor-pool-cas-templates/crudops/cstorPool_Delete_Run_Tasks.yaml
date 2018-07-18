@@ -11,7 +11,7 @@ data:
     kind: CStorPool
     action: list
     options: |-
-      labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
+      labelSelector: openebs.io/storagepoolclaim={{.CstorPool.owner}}
   post: |
     {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csps | notFoundErr "cstor pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
@@ -45,7 +45,7 @@ data:
     kind: Deployment
     action: list
     options: |-
-      labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
+      labelSelector: openebs.io/storagepoolclaim={{.CstorPool.owner}}
   post: |
     {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}
@@ -79,7 +79,7 @@ data:
     kind: StoragePool
     action: list
     options: |-
-      labelSelector: cas.openebs.io/storage-pool-claim={{.CstorPool.owner}}
+      labelSelector: openebs.io/storagepoolclaim={{.CstorPool.owner}}
   post: |
     {{- $sps := jsonpath .JsonResult `{range .items[*]}pkey=sps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
     {{- $sps | notFoundErr "storge pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}

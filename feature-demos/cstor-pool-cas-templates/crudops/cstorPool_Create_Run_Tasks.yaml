@@ -32,7 +32,7 @@ data:
         - {{$v}}
         {{ end }}
   post: |
-    {{- $nodesList := jsonpath .JsonResult `pkey=nodes,{@.metadata.labels.kubernetes\.io/hostname}={@.spec.path};` | trim | default "" | splitList ";" -}}
+    {{- $nodesList := jsonpath .JsonResult `pkey=nodes,{@.metadata.labels.kubernetes\.io/hostname}={@.spec.devlinks[0].links[1]};` | trim | default "" | splitList ";" -}}
     {{- $nodesList | keyMap "cstorNodePoolList" .ListItems | noop -}}
 ---
 apiVersion: v1
@@ -61,7 +61,7 @@ data:
     metadata:
       name: {{.CstorPool.owner}}-{{randAlphaNum 4 |lower }}
       labels:
-        cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
+        openebs.io/storagepoolclaim: {{.CstorPool.spc}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
     spec:
       disks:
@@ -100,7 +100,8 @@ data:
     metadata:
       name: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
       labels:
-        cas.openebs.io/storage-pool-claim: {{.CstorPool.owner}}
+        openebs.io/storagepoolclaim: {{.CstorPool.owner}}
+        openebs.io/cstorPool: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
         app: cstor-pool
     spec:
       replicas: 1
@@ -201,7 +202,8 @@ data:
     metadata:
       name: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last }}
       labels:
-        cas.openebs.io/storage-pool-claim: {{.CstorPool.spc}}
+        openebs.io/storagepoolclaim: {{.CstorPool.spc}}
+        openebs.io/cstorpool: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
     spec:
       disks:
