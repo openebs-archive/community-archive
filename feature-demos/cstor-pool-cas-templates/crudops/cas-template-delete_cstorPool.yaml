@@ -3,7 +3,12 @@ kind: CASTemplate
 metadata:
   name: cstor-pool-delete-cast
 spec:
-  taskNamespace: default
+  # A list of deafult configs can be entered here to utilise it in run tasks.
+  defaultConfig:
+    # This is the namespace where namespaced resources related to pool creation will be created.
+  - name: runNamespace
+    value: openebs
+  taskNamespace: openebs
   run:
     tasks:
     # Following are run tasks that are executed in order to delete a storage pool

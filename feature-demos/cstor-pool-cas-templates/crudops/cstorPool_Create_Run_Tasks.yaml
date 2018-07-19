@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-list-disk-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: cstorpoollistdisk
@@ -17,7 +17,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-list-node-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: cstorpoollistnode
@@ -39,7 +39,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-put-cr-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     apiVersion: openebs.io/v1alpha1
@@ -77,10 +77,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-put-deployment-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
-    runNamespace: default
+    runNamespace: {{.Config.runNamespace.value}}
     apiVersion: extensions/v1beta1
     kind: Deployment
     action: put
@@ -181,7 +181,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-put-storagepool-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     apiVersion: openebs.io/v1alpha1
@@ -217,7 +217,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-create-patch-spc-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: createpatchspc

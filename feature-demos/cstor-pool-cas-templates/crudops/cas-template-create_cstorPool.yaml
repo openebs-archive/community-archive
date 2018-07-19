@@ -15,7 +15,10 @@ spec:
   # 'DirectoryOrCreate' value  ensures nothing exists at the given path, an empty directory will be created
   - name: hostPathType
     value: DirectoryOrCreate
-  taskNamespace: default
+    # This is the namespace where namespaced resources related to pool will be deleted.
+  - name: runNamespace
+    value: openebs
+  taskNamespace: openebs
   run:
     tasks:
     # Following are the list of run tasks that are executed in order to create a storage pool

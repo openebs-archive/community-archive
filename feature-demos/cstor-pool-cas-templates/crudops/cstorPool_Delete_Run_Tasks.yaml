@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-listcsp-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: deletelistcsp
@@ -13,7 +13,7 @@ data:
     options: |-
       labelSelector: openebs.io/storagepoolclaim={{.CstorPool.owner}}
   post: |
-    {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $csps := jsonpath .JsonResult `{range .items[*]}pkey=csps,{@.metadata.name}=;{end}` | trim | default "" | splitList ";" -}}
     {{- $csps | notFoundErr "cstor pool cr not found" | saveIf "deletelistcsp.notFoundErr" .TaskResult | noop -}}
     {{- $csps | keyMap "csplist" .ListItems | noop -}}
 ---
@@ -22,7 +22,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-delete-csp-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     apiVersion: openebs.io/v1alpha1
@@ -36,18 +36,18 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-list-deploy-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: cstorpoollistdeploy
-    apiVersion: extensions/v1beta1 
-    runNamespace: default
+    apiVersion: extensions/v1beta1
+    runNamespace: {{.Config.runNamespace.value}}
     kind: Deployment
     action: list
     options: |-
       labelSelector: openebs.io/storagepoolclaim={{.CstorPool.owner}}
   post: |
-    {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds,{@.metadata.name}="";{end}` | trim | default "" | splitList ";" -}}
+    {{- $csds := jsonpath .JsonResult `{range .items[*]}pkey=csds,{@.metadata.name}=;{end}` | trim | default "" | splitList ";" -}}
     {{- $csds | notFoundErr "cstor pool deployment not found" | saveIf "cstorpoollistdeploy.notFoundErr" .TaskResult | noop -}}
     {{- $csds | keyMap "csdlist" .ListItems | noop -}}
 ---
@@ -56,11 +56,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-delete-deploy-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: cstorpooldeletedeploy
-    runNamespace: default
+    runNamespace: {{.Config.runNamespace.value}}
     apiVersion: extensions/v1beta1
     kind: Deployment
     action: delete
@@ -71,7 +71,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-listsp-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: deletelistsp
@@ -90,7 +90,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cstor-pool-delete-delete-storagepool-0.6.0
-  namespace: default
+  namespace: openebs
 data:
   meta: |
     id: cstorpooldeletestoragepool
