@@ -7,10 +7,10 @@ spec:
   defaultConfig:
   # cstorpool is the container which runs zpool replication controller and communicates with iscsi target.
   - name: CstorPoolImage
-    value: gkganeshr/cstor-pool:v1.1
+    value: openebs/cstor-pool:ci
   # cstor-pool-mgmt is the container which watches for cstorpool and cstorvolumereplica CRs and runs the pool and volumereplica related operations like create, delete, import, etc.
   - name: CstorPoolMgmtImage
-    value: gkganeshr/cstor-pool-mgmt:v2.6
+    value: openebs/cstor-pool-mgmt:cstor-feature-integration-ci
   # A hostPath volume mounts a file or directory from the host node’s filesystem into your Pod.
   # 'DirectoryOrCreate' value  ensures nothing exists at the given path, an empty directory will be created
   - name: hostPathType
