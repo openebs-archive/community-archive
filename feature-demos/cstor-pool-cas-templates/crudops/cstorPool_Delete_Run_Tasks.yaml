@@ -41,7 +41,7 @@ data:
   meta: |
     id: cstorpoollistdeploy
     apiVersion: extensions/v1beta1
-    runNamespace: {{.Config.runNamespace.value}}
+    runNamespace: openebs
     kind: Deployment
     action: list
     options: |-
@@ -60,7 +60,7 @@ metadata:
 data:
   meta: |
     id: cstorpooldeletedeploy
-    runNamespace: {{.Config.runNamespace.value}}
+    runNamespace: openebs
     apiVersion: extensions/v1beta1
     kind: Deployment
     action: delete
