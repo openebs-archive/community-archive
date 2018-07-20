@@ -72,7 +72,7 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolume
     id: cvolcreateputvolume
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     action: put
   post: |
     {{- jsonpath .JsonResult `{.metadata.uid}` | trim | saveAs "cvolcreateputvolume.cstorid" .TaskResult | noop -}}
@@ -211,7 +211,7 @@ metadata:
 data:
   meta: |
     apiVersion: openebs.io/v1alpha1
-    runNameSpace: {{ .Volume.runNamespace }}
+    runNameSpace: openebs
     kind: CStorVolumeReplica
     action: put
     id: cstorvolumecreatereplica
@@ -318,7 +318,7 @@ data:
     We create a pair of "clusterIP"=xxxxx and save it for corresponding volume
     The per volume is servicePair is identified by unique "namespace/vol-name" key
     */}}
-    {{- $servicePairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},clusterIP={@.spec.clusterIP};{end}` | trim | default "" | splitList ";" -}}
+    {{- $servicePairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.labels.openebs\.io/pv},clusterIP={@.spec.clusterIP};{end}` | trim | default "" | splitList ";" -}}
     {{- $servicePairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 # runTask to list all cstor controller pods
@@ -347,7 +347,7 @@ data:
     We create a pair of "controllerIP"=xxxxx and save it for corresponding volume
     The per volume is servicePair is identified by unique "namespace/vol-name" key
     */}}
-    {{- $controllerPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},controllerIP={@.status.podIP},controllerStatus={@.status.containerStatuses[*].ready};{end}` | trim | default "" | splitList ";" -}}
+    {{- $controllerPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.labels.openebs\.io/pv},controllerIP={@.status.podIP},controllerStatus={@.status.containerStatuses[*].ready};{end}` | trim | default "" | splitList ";" -}}
     {{- $controllerPairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 apiVersion: v1
@@ -357,20 +357,13 @@ metadata:
   namespace: openebs
 data:
   meta: |
-    {{/* $nss stores all the namespaces in which list has to be performed */}}
-    {{- $nss := .Volume.runNamespace | default "" | splitList ", " -}}
-    repeatWith:
-     kind: namespace
-     resources:
-     {{- range $k, $ns := $nss }}
-     - {{ $ns }}
-     {{- end }}
+    runNamespace: openebs
     id: listlistrep
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolumeReplica
     action: list
   post: |
-    {{- $replicaPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.namespace}/{@.metadata.labels.openebs\.io/pv},replicaName={@.metadata.name},capacity={@.spec.capacity};{end}` | trim | default "" | splitList ";" -}}
+    {{- $replicaPairs := jsonpath .JsonResult `{range .items[*]}pkey={@.metadata.labels.openebs\.io/pv},replicaName={@.metadata.name},capacity={@.spec.capacity};{end}` | trim | default "" | splitList ";" -}}
     {{- $replicaPairs | keyMap "volumeList" .ListItems | noop -}}
 ---
 # runTask to render volume list output
@@ -398,13 +391,11 @@ data:
     {{- $clusterIP := pluck "clusterIP" $map | first }}
     {{- $controllerStatus := pluck "controllerStatus" $map | first }}
     {{- $replicaName := pluck "replicaName" $map | first }}
-    {{- $name := $pkey | splitList "/" | last }}
-    {{- $ns := $pkey | splitList "/" | first }}
+    {{- $name := $pkey }}
       - kind: CASVolume
         apiVersion: v1alpha1
         metadata:
           name: {{ $name }}
-          namespace: {{ $ns }}
           annotations:
             vsm.openebs.io/cluster-ips: {{ $clusterIP }}
             vsm.openebs.io/iqn: iqn.2016-09.com.openebs.cstor:{{ $name }}
@@ -450,7 +441,7 @@ metadata:
 data:
   meta: |
     id: readlistrep
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolumeReplica
     action: list
@@ -526,7 +517,7 @@ metadata:
   namespace: openebs
 data:
   meta: |
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     id: deletelistcsv
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolume
@@ -591,7 +582,7 @@ metadata:
 data:
   meta: |
     id: deletelistcvr
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     apiVersion: openebs.io/v1alpha1
     kind: CStorVolumeReplica
     action: list
@@ -644,7 +635,7 @@ metadata:
   namespace: openebs
 data:
   meta: |
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     id: deletedeletecvr
     action: delete
     kind: CStorVolumeReplica
@@ -659,7 +650,7 @@ metadata:
   namespace: openebs
 data:
   meta: |
-    runNamespace: {{ .Volume.runNamespace }}
+    runNamespace: openebs
     id: deletedeletecsv
     action: delete
     apiVersion: openebs.io/v1alpha1
