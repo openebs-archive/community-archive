@@ -5,13 +5,17 @@ metadata:
   namespace: openebs
 data:
   meta: |
-    id: cstorpoollistdisk
+    id: getspcinfo
     apiVersion: openebs.io/v1alpha1
     kind: StoragePoolClaim
-    objectName: {{.CstorPool.spc}}
+    objectName: {{.Storagepool.owner}}
     action: get
   post: |
-    {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "cstorpoollistdisk.disk" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{range .spec.disks.diskList[*]}{$},{end}" | trim | saveAs "getspcinfo.disk" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.spec.poolSpec.poolType}" | trim | saveAs "getspcinfo.poolType" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.spec.poolSpec.cacheFile}" | trim | saveAs "getspcinfo.cacheFile" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.spec.poolSpec.overProvisioning}" | trim | saveAs "getspcinfo.overProvisioning" .TaskResult | noop -}}
+    {{- jsonpath .JsonResult "{.spec.type}" | trim | saveAs "getspcinfo.type" .TaskResult | noop -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -27,7 +31,7 @@ data:
     repeatWith:
       kind: name
       resources:
-        {{- $diskList := .TaskResult.cstorpoollistdisk.disk | replace "," " "| trim | split " "}}
+        {{- $diskList := .TaskResult.getspcinfo.disk | replace "," " "| trim | split " "}}
         {{ range $k,$v := $diskList }}
         - {{$v}}
         {{ end }}
@@ -59,19 +63,19 @@ data:
     apiVersion: openebs.io/v1alpha1
     kind: CStorPool
     metadata:
-      name: {{.CstorPool.owner}}-{{randAlphaNum 4 |lower }}
+      name: {{.Storagepool.owner}}-{{randAlphaNum 4 |lower }}
       labels:
-        openebs.io/storagepoolclaim: {{.CstorPool.spc}}
+        openebs.io/storagepoolclaim: {{.Storagepool.owner}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
     spec:
       disks:
         diskList: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodePoolList.nodes }}
       poolSpec:
-        poolType: {{.CstorPool.poolType}}
-        cacheFile: /tmp/{{.CstorPool.spc}}.cache
+        poolType: {{.TaskResult.getspcinfo.poolType}}
+        cacheFile: /tmp/{{.Storagepool.owner}}.cache
         overProvisioning: false
     status:
-      phase: {{ .CstorPool.phase }}
+      phase: {{ .Storagepool.phase }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -100,7 +104,7 @@ data:
     metadata:
       name: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
       labels:
-        openebs.io/storagepoolclaim: {{.CstorPool.owner}}
+        openebs.io/storagepoolclaim: {{.Storagepool.owner}}
         openebs.io/cstorPool: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
         app: cstor-pool
     spec:
@@ -196,21 +200,21 @@ data:
   post: |
     {{- jsonpath .JsonResult `{.metadata.name}` | trim | addTo "createputstoragepool.objectName" .TaskResult | noop -}}
   task: |
-    {{- $diskList := .TaskResult.cstorpoollistdisk.disk | replace "," " "| trim | split " " }}
+    {{- $diskList := .TaskResult.getspcinfo.disk | replace "," " "| trim | split " " }}
     apiVersion: openebs.io/v1alpha1
     kind: StoragePool
     metadata:
       name: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last }}
       labels:
-        openebs.io/storagepoolclaim: {{.CstorPool.spc}}
+        openebs.io/storagepoolclaim: {{.Storagepool.owner}}
         openebs.io/cstorpool: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodeUidList.nodesUid |first | splitList " " | last}}
         kubernetes.io/hostname: {{ .ListItems.currentRepeatResource }}
     spec:
       disks:
         diskList: {{ pluck .ListItems.currentRepeatResource .ListItems.cstorNodePoolList.nodes }}
       poolSpec:
-        poolType: {{.CstorPool.poolType}}
-        cacheFile: /tmp/{{.CstorPool.spc}}.cache
+        poolType: {{.TaskResult.getspcinfo.poolType}}
+        cacheFile: /tmp/{{.Storagepool.owner}}.cache
         overProvisioning: false
 ---
 apiVersion: v1
@@ -223,10 +227,10 @@ data:
     id: createpatchspc
     apiVersion: openebs.io/v1alpha1
     kind: StoragePoolClaim
-    objectName: {{.CstorPool.owner}}
+    objectName: {{.Storagepool.owner}}
     action: patch
   task: |
     type: merge
     pspec: |-
       status:
-        phase: online
+        phase: Online
