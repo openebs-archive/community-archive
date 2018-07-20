@@ -3,7 +3,7 @@ kind: CASTemplate
 metadata:
   name: list-jiva-cas-volume-tpl
 spec:
-  taskNamespace: default
+  taskNamespace: openebs
   run:
     tasks:
     - cstor-volume-list-list-controller-service-0.7.0

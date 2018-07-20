@@ -21,7 +21,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: openebs-maya-operator
-  namespace: default
+  namespace: openebs
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -134,13 +134,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: openebs-maya-operator
-  namespace: default
+  namespace: openebs
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: maya-apiserver-service
-  namespace: default
+  namespace: openebs
   labels:
     app: openebs
     role: apiserver
@@ -159,7 +159,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: maya-apiserver
-  namespace: default
+  namespace: openebs
   labels:
     app: openebs
     role: apiserver
@@ -185,7 +185,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: openebs-provisioner
-  namespace: default
+  namespace: openebs
 spec:
   replicas: 1
   template:
@@ -210,3 +210,5 @@ spec:
           value: "https://mayaonline.io/"
         - name: OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE
           value: "true"
+        - name: OPENEBS_NAMESPACE
+          value: openebs

@@ -3,7 +3,7 @@ kind: CASTemplate
 metadata:
   name: delete-jiva-cas-volume-tpl
 spec:
-  taskNamespace: default
+  taskNamespace: openebs
   run:
     tasks:
     - cstor-volume-delete-list-cstorvolume-0.7.0
