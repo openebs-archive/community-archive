@@ -146,6 +146,7 @@ data:
             {{- end}}
             openebs.io/controller: cstor-controller
             openebs.io/pv: {{ .Volume.owner }}
+            k8s.io/pvc: {{ .Volume.pvc }}
             app: cstor-volume-manager
         spec:
           containers:

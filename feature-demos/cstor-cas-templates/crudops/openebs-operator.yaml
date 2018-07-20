@@ -179,7 +179,7 @@ spec:
         - containerPort: 5656
         env:
         - name: OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE
-          value: "on"
+          value: "true"
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
@@ -209,4 +209,4 @@ spec:
         - name: MAYA_PORTAL_URL
           value: "https://mayaonline.io/"
         - name: OPENEBS_IO_CAS_TEMPLATE_FEATURE_GATE
-          value: "on"
+          value: "true"
