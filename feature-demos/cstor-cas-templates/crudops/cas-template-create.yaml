@@ -1,0 +1,23 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: cast-standard-cstor-create-0.7.0
+spec:
+  defaultConfig:
+  - name: VolumeControllerImage
+    value: moteesh/cstor-volume-mgmt:ci
+  - name: VolumeTargetImage
+    value: moteesh/cstor-istgt:ci
+  - name: VolumeExporterImage
+    value: utkarshmani1997/m-exporter:RC-11
+  - name: ReplicaCount
+    value: "2"
+  taskNamespace: openebs
+  run:
+    tasks:
+    - cstor-volume-create-list-pool-0.7.0
+    - cstor-volume-create-put-service-0.7.0
+    - cstor-volume-create-put-csv-0.7.0
+    - cstor-volume-create-put-controller-0.7.0
+    - cstor-volume-create-put-replica-0.7.0
+  output: volume-create-output-0.7.0

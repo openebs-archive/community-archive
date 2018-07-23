@@ -1,0 +1,17 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-001
+  namespace: prince
+  annotations:
+    cas.openebs.io/config: |
+      - name: StoragePoolClaim
+        value: "123"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-standard

@@ -1,0 +1,17 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  name: delete-cstor-cas-volume-tpl
+spec:
+  taskNamespace: openebs
+  run:
+    tasks:
+    - cstor-volume-delete-list-cstorvolume-0.7.0
+    - cstor-volume-delete-list-controller-service-0.7.0
+    - cstor-volume-delete-list-controller-deployment-0.7.0
+    - cstor-volume-delete-list-cstorvolumereplica-0.7.0
+    - cstor-volume-delete-delete-controller-service-0.7.0
+    - cstor-volume-delete-delete-controller-deployment-0.7.0
+    - cstor-volume-delete-delete-cstorvolumereplica-0.7.0
+    - cstor-volume-delete-delete-cstorvolume-0.7.0
+  output: volume-delete-output-0.7.0
