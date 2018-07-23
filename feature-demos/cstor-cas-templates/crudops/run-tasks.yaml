@@ -60,7 +60,6 @@ data:
         targetPort: 6060
         protocol: TCP
       selector:
-        openebs/controller: cstor-controller
         openebs.io/controller: cstor-controller
         openebs.io/pv: {{ .Volume.owner }}
         app: cstor-volume-manager

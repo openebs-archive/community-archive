@@ -1,7 +1,7 @@
 apiVersion: openebs.io/v1alpha1
 kind: CASTemplate
 metadata:
-  name: list-jiva-cas-volume-tpl
+  name: list-cstor-cas-volume-tpl
 spec:
   taskNamespace: openebs
   run:
