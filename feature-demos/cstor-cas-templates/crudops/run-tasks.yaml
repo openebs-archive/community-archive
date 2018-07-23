@@ -242,6 +242,7 @@ data:
       name: {{ .Volume.owner }}-{{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
       labels:
         cstorpool.openebs.io/name: {{ pluck .ListItems.currentRepeatResource .ListItems.cvolPoolList.pools | first }}
+        cstorpool.openebs.io/uid: {{ .ListItems.currentRepeatResource }}
         cstorvolume.openebs.io/uid: {{ .TaskResult.cvolcreateputvolume.cstorid }}
         cstorvolumereplica.openebs.io/pvc-name: {{ .Volume.pvc }}
         openebs.io/pv: {{ .Volume.owner }}
