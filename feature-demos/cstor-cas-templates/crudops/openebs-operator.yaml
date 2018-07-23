@@ -92,6 +92,40 @@ spec:
     shortNames:
     - spc
 ---
+# CstorVolumeReplica CRD
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cstorvolumereplicas.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: CStorVolumeReplica
+    listKind: CStorVolumeReplicaList
+    plural: cstorvolumereplicas
+    shortNames:
+    - cvr
+    singular: cstorvolumereplica
+  scope: Namespaced
+  version: v1alpha1
+---
+# CstorVolume CRD
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: cstorvolumes.openebs.io
+spec:
+  group: openebs.io
+  names:
+    kind: CStorVolume
+    listKind: CStorVolumeList
+    plural: cstorvolumes
+    shortNames:
+    - cstorvolume
+    singular: cstorvolume
+  scope: Namespaced
+  version: v1alpha1
+---
 apiVersion: openebs.io/v1alpha1
 kind: StoragePool
 metadata:
@@ -196,7 +230,7 @@ spec:
       serviceAccountName: openebs-maya-operator
       containers:
       - name: openebs-provisioner
-        image: "rachitprince/openebs-provisioner:v1alpha1"
+        image: "rachitprince/openebs-provisioner:rebase"
         env:
         - name: NODE_NAME
           valueFrom:

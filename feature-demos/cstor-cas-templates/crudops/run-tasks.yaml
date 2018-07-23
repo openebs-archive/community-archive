@@ -250,7 +250,7 @@ data:
         cstorvolume.openebs.io/uid: {{ .TaskResult.cvolcreateputvolume.cstorid }}
         cstorvolumereplica.openebs.io/pvc-name: {{ .Volume.pvc }}
         openebs.io/pv: {{ .Volume.owner }}
-        #  finalizers: ["cstorvolumereplica.openebs.io/finalizer"]
+      finalizers: ["cstorvolumereplica.openebs.io/finalizer"]
     spec:
       capacity: {{ .Volume.capacity }}
       targetIP: {{ .TaskResult.cvolcreateputsvc.clusterIP }}
