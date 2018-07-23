@@ -55,11 +55,15 @@ data:
         port: 3260
         protocol: TCP
         targetPort: 3260
+      - name: mgmt
+        port: 6060
+        targetPort: 6060
+        protocol: TCP
       selector:
         openebs/controller: cstor-controller
-        vsm: {{ .Volume.owner }}
         openebs.io/controller: cstor-controller
         openebs.io/pv: {{ .Volume.owner }}
+        app: cstor-volume-manager
 ---
 # runTask to create cStorVolume
 apiVersion: v1
@@ -120,7 +124,7 @@ data:
         app: cstor-volume-manager
         openebs.io/storage-engine-type: cstor
         openebs.io/controller: cstor-controller
-        vsm: {{ .Volume.owner }}
+        openebs/controller: cstor-controller
         openebs.io/pv: {{ .Volume.owner }}
         openebs.io/pvc: {{ .Volume.pvc }}
       annotations:
