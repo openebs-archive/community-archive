@@ -1,6 +1,6 @@
 ## Overview
 * OpenEBS uses [Prometheus](https://github.com/prometheus/prometheus) to  monitor Volumes . We use [node-exporter](https://github.com/prometheus/node_exporter) to gather nodes metrics, [cadviser](https://github.com/google/cadvisor) for container metrics and maya-agent to gather OpenEBS volume's metrics.
-* [openebs-monitoring](https://github.com/openebs/openebs/tree/master/k8s/openebs-monitoring) sub directory has following files:
+* [openebs-monitoring](../openebs-monitoring) sub directory has following files:
 ```
 ├── openebs-monitoring
 │   ├── alertmanager.yaml
