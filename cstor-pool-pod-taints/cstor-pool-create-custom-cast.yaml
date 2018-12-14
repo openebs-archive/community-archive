@@ -1,0 +1,40 @@
+apiVersion: openebs.io/v1alpha1
+kind: CASTemplate
+metadata:
+  labels:
+    castName: cstor-pool-create-custom-0.8.0
+    version: 0.8.0
+  name: cstor-pool-create-custom-0.8.0
+spec:
+  defaultConfig:
+  - name: CstorPoolImage
+    value: quay.io/openebs/cstor-pool:0.8.0
+  - name: CstorPoolMgmtImage
+    value: quay.io/openebs/cstor-pool-mgmt:0.8.0
+  - name: HostPathType
+    value: DirectoryOrCreate
+  - name: SparseDir
+    value: /var/openebs/sparse
+  - name: RunNamespace
+    value: openebs
+  - name: ServiceAccountName
+    value: openebs-maya-operator
+  - name: PoolResourceRequests
+    value: none
+  - name: PoolResourceLimits
+    value: none
+  - name: AuxResourceLimits
+    value: none
+  - name: ResyncInterval
+    value: "30"
+  - name: Tolerations
+    value: none
+  run:
+    tasks:
+    - cstor-pool-create-getspcinfo-default-0.8.0
+    - cstor-pool-create-listnode-default-0.8.0
+    - cstor-pool-create-putcstorpoolcr-default-0.8.0
+    - cstor-pool-create-putcstorpooldeployment-custom-0.8.0
+    - cstor-pool-create-putstoragepoolcr-default-0.8.0
+    - cstor-pool-create-patchstoragepoolclaim-default-0.8.0
+  taskNamespace: openebs
